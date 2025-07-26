@@ -120,3 +120,46 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  /* Glow effects for neon UI elements */
+  .glow-blue {
+    box-shadow: 0 0 20px hsl(var(--neon-blue) / 0.3);
+    transition: all 0.3s ease;
+  }
+  
+  .glow-blue:hover {
+    box-shadow: 0 0 30px hsl(var(--neon-blue) / 0.5);
+  }
+  
+  .glow-purple {
+    box-shadow: 0 0 20px hsl(var(--lavender) / 0.3);
+    transition: all 0.3s ease;
+  }
+  
+  .glow-purple:hover {
+    box-shadow: 0 0 30px hsl(var(--lavender) / 0.5);
+  }
+  
+  .text-neon {
+    color: hsl(var(--neon-blue));
+    text-shadow: 0 0 10px hsl(var(--neon-blue) / 0.5);
+  }
+  
+  .text-lavender {
+    color: hsl(var(--lavender));
+    text-shadow: 0 0 10px hsl(var(--lavender) / 0.3);
+  }
+  
+  .border-neon {
+    border-color: hsl(var(--neon-blue));
+  }
+  
+  .bg-dark-surface {
+    background-color: hsl(var(--dark-surface));
+  }
+  
+  .bg-darker-surface {
+    background-color: hsl(var(--darker-surface));
+  }
+}

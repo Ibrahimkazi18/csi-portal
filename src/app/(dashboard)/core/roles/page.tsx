@@ -10,11 +10,11 @@ import { Member } from '@/types/auth';
 
 // Mock data
 const mockMembers: Member[] = [
-  { id: '1', name: 'John Doe', email: 'john@example.com', role: 'Developer', joinDate: '2024-01-15', teamId: 'team1' },
-  { id: '2', name: 'Jane Smith', email: 'jane@example.com', role: 'Designer', joinDate: '2024-01-20', teamId: 'team1' },
-  { id: '3', name: 'Mike Johnson', email: 'mike@example.com', role: 'Manager', joinDate: '2024-02-01', teamId: 'team2' },
-  { id: '4', name: 'Sarah Wilson', email: 'sarah@example.com', role: 'Tester', joinDate: '2024-02-10', teamId: 'team2' },
-  { id: '5', name: 'Alex Brown', email: 'alex@example.com', role: 'Marketing', joinDate: '2024-02-15', teamId: 'team3' },
+  { id: '1', full_name: 'John Doe', email: 'john@example.com', role: 'Developer', created_at: '2024-01-15' },
+  { id: '2', full_name: 'Jane Smith', email: 'jane@example.com', role: 'Designer', created_at: '2024-01-20' },
+  { id: '3', full_name: 'Mike Johnson', email: 'mike@example.com', role: 'Manager', created_at: '2024-02-01' },
+  { id: '4', full_name: 'Sarah Wilson', email: 'sarah@example.com', role: 'Tester', created_at: '2024-02-10' },
+  { id: '5', full_name: 'Alex Brown', email: 'alex@example.com', role: 'Marketing', created_at: '2024-02-15' },
 ];
 
 const availableRoles = ['Developer', 'Designer', 'Manager', 'Tester', 'Marketing', 'Research', 'DevOps'];
@@ -117,7 +117,7 @@ export default function RolesPage() {
               <TableBody>
                 {members.map((member) => (
                   <TableRow key={member.id} className="border-border">
-                    <TableCell className="font-medium">{member.name}</TableCell>
+                    <TableCell className="font-medium">{member.full_name}</TableCell>
                     <TableCell>{member.email}</TableCell>
                     <TableCell>
                       {editingId === member.id ? (
@@ -139,14 +139,14 @@ export default function RolesPage() {
                         </Badge>
                       )}
                     </TableCell>
-                    <TableCell>{new Date(member.joinDate).toLocaleDateString()}</TableCell>
-                    <TableCell>
+                    <TableCell>{new Date(member.created_at).toLocaleDateString()}</TableCell>
+                    {/* <TableCell>
                       {member.teamId ? (
                         <Badge variant="outline">Team {member.teamId.slice(-1)}</Badge>
                       ) : (
                         <span className="text-muted-foreground">No team</span>
                       )}
-                    </TableCell>
+                    </TableCell> */}
                     <TableCell className="text-right">
                       {editingId === member.id ? (
                         <div className="flex justify-end gap-2">

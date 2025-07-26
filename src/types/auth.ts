@@ -47,9 +47,16 @@ export interface Query {
 
 export interface Member {
   id: string;
-  name: string;
+  full_name: string;
   email: string;
   role: string;
-  joinDate: string;
-  teamId?: string;
+  created_at: string;
+}
+
+export interface PendingMember {
+  full_name: string;
+  email: string;
+  role: string;
+  member_role: string;
+  created_at: string;
 }

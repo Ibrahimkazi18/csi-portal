@@ -7,9 +7,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Computer, Users } from 'lucide-react';
-import { login } from '../actions'
+import { signup } from '../actions'
 
-export default function LoginPage() {
+export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [activeTab, setActiveTab] = useState<'member' | 'core-team'>('member');
@@ -19,9 +19,9 @@ export default function LoginPage() {
     const data = {email, password};
     try {
       console.log(data);
-      login(data);
+      signup(data);
     } catch (error) {
-      console.error('Login failed:', error);
+      console.error('Signup failed:', error);
     }
   };
 
@@ -31,13 +31,13 @@ export default function LoginPage() {
         <div className="text-center space-y-2">
           <Computer className="h-12 w-12 text-neon-blue mx-auto glow-blue" />
           <h1 className="text-3xl font-bold text-neon">CSI Dashboard</h1>
-          <p className="text-muted-foreground">Sign in to your account</p>
+          <p className="text-muted-foreground">Sign up to your account</p>
         </div>
 
         <Card className="bg-dark-surface border-border glow-blue">
           <CardHeader>
-            <CardTitle>Welcome Back</CardTitle>
-            <CardDescription>Choose your account type and sign in</CardDescription>
+            <CardTitle>Welcome To CSI Portal</CardTitle>
+            <CardDescription>Choose your account type and sign up</CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'member' | 'core-team')}>
@@ -82,7 +82,7 @@ export default function LoginPage() {
                     className="w-full glow-blue" 
                     // disabled={loading}
                   >
-                    {/* {loading ? 'Signing in...' : 'Sign In as Member'} */}Sign In
+                    {/* {loading ? 'Signing in...' : 'Sign In as Member'} */}Sign Up
                   </Button>
                 </form>
               </TabsContent>
@@ -119,7 +119,7 @@ export default function LoginPage() {
                     // disabled={loading}
                   >
                     {/* {loading ? 'Signing in...' : 'Sign In as Core Team'} */}
-                    Sign In
+                    Sign Up
                   </Button>
                 </form>
               </TabsContent>

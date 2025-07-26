@@ -11,7 +11,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <div className="flex h-screen bg-background">
-      {role === 'core-team' ? <MemberSidebar /> : <MemberSidebar />}
+      {role === 'core-team' ? <CoreTeamSidebar /> : <MemberSidebar />}
       <main className="flex-1 overflow-auto">
         <div className="p-6">
           {children}

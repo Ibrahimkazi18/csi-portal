@@ -9,11 +9,16 @@ import {
   BookOpen, 
   Shield,
   Computer,
-  LogOut
+  LogOut,
+  Megaphone
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useCallback, useEffect, useState } from 'react';
+import { getProfileUser, logOut } from './actions';
+import { toast } from 'sonner';
+import { ThemeToggle } from './ui/theme-toggler';
 
 const sidebarItems = [
   { 
@@ -43,7 +48,7 @@ const sidebarItems = [
   },
   { 
     title: 'Announcements', 
-    icon: BookOpen, 
+    icon: Megaphone, 
     path: '/core/announcements' 
   },
   { 
@@ -60,6 +65,59 @@ const sidebarItems = [
 
 export default function CoreTeamSidebar() {
   const pathname = usePathname();
+  const [loading, setLoading] = useState(false);
+    const [loadingData, setLoadingData] = useState(true)
+  const [user, setUser] = useState<any>(null);
+
+  const fetchUserProfile = useCallback(async () => {
+    setLoadingData(true)
+    try {
+      const [resposne] = await Promise.all([getProfileUser()]);
+
+      if(resposne.error) {
+        throw new Error(resposne.error);
+      }
+
+      else if (resposne.success) {
+        setUser(resposne.user);
+      }
+
+    } catch (error) {
+        console.error("Failed to fetch members:", error)
+        toast.error("Error", {
+          description: "Failed to load members. Please try again.",
+        });
+
+    } finally {
+      setLoadingData(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchUserProfile();
+  }, [fetchUserProfile]);
+
+  const handleLogOut = async () => {
+    try {
+      setLoading(true);
+
+      const response = await logOut();
+
+      if(!response.success) {
+        throw new Error(response.error || "logout Failed")
+      }
+
+      toast.success("Loggeg out successfully", {
+        description: "Hope to see you again soon!"
+      })
+
+    } catch (error) {
+      console.error('Logout error:', error);
+
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div className="h-screen w-64 bg-darker-surface border-r border-border flex flex-col">
@@ -102,22 +160,26 @@ export default function CoreTeamSidebar() {
         <div className="flex items-center gap-3 px-3 py-2">
           <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center">
             <span className="text-sm font-medium text-secondary-foreground">
-              {/* {user?.name.charAt(0).toUpperCase()} */}User
+              {user?.full_name.charAt(0).toUpperCase()}
             </span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">username</p>
-            <p className="text-xs text-muted-foreground truncate">usereamil</p>
+            <p className="text-sm font-medium truncate">{user?.full_name}</p>
+            <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
           </div>
         </div>
+
+        <ThemeToggle />
+
         <Button
           variant="outline"
           size="sm"
-        //   onClick={logout}
-          className="w-full justify-start"
+          onClick={handleLogOut}
+          disabled={loading}
+          className="w-full justify-center lg:text-xlg"
         >
           <LogOut className="h-4 w-4 mr-2" />
-          Sign Out
+          {loading ? "Signing Out..." : "Sign Out"}
         </Button>
       </div>
     </div>
