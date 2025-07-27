@@ -1,52 +1,103 @@
 "use client"
 
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Shield, Edit, Save, X } from 'lucide-react';
-import { Member } from '@/types/auth';
-
-// Mock data
-const mockMembers: Member[] = [
-  { id: '1', full_name: 'John Doe', email: 'john@example.com', role: 'Developer', created_at: '2024-01-15' },
-  { id: '2', full_name: 'Jane Smith', email: 'jane@example.com', role: 'Designer', created_at: '2024-01-20' },
-  { id: '3', full_name: 'Mike Johnson', email: 'mike@example.com', role: 'Manager', created_at: '2024-02-01' },
-  { id: '4', full_name: 'Sarah Wilson', email: 'sarah@example.com', role: 'Tester', created_at: '2024-02-10' },
-  { id: '5', full_name: 'Alex Brown', email: 'alex@example.com', role: 'Marketing', created_at: '2024-02-15' },
-];
-
-const availableRoles = ['Developer', 'Designer', 'Manager', 'Tester', 'Marketing', 'Research', 'DevOps'];
-
-const roleColors = {
-  'Developer': 'bg-blue-500/20 text-blue-500',
-  'Designer': 'bg-purple-500/20 text-purple-500',
-  'Manager': 'bg-green-500/20 text-green-500',
-  'Tester': 'bg-orange-500/20 text-orange-500',
-  'Marketing': 'bg-pink-500/20 text-pink-500',
-  'Research': 'bg-cyan-500/20 text-cyan-500',
-  'DevOps': 'bg-red-500/20 text-red-500'
-};
+import { getMemberRoles, getMembers, getProfileUser, updateMemberRole } from './actions';
+import { toast } from 'sonner';
+import { set } from 'date-fns';
 
 export default function RolesPage() {
-  const [members, setMembers] = useState<Member[]>(mockMembers);
+  const [members, setMembers] = useState<any[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [tempRole, setTempRole] = useState<string>('');
+  const [loadingData, setLoadingData] = useState(true);
+  const [loadEditMemberRole, setLoadEditMemberRole] = useState(false);
+  const [availableRoles, setAvailableRoles] = useState<any[]>([]);
+  const [availableRolesWithDescription, setAvailableRolesWithDescription] = useState<any[]>([]);
+  const [roleColors, setRoleColors] = useState<{name : string, color_class: string}[]>([]);
+  const [profileUser, setProfileUser] = useState<any>(null);
+
+  const fetchAllMembersAndRoles = useCallback(async () => {
+    setLoadingData(true);
+
+    try {
+      const [activeMembers, memberRoles, response] = await Promise.all([getMembers(), getMemberRoles(), getProfileUser()]);
+
+      if(response.error) {
+        throw new Error(response.error);
+      }
+
+      else if(response.success){
+        setProfileUser(response.user);
+      }
+
+      setMembers(activeMembers);
+      const roles = memberRoles.map(role => role.name);
+      
+      setAvailableRoles(roles);
+      setAvailableRolesWithDescription(memberRoles);
+
+      const assignableRoles = memberRoles.map((role:any) => {
+        return {
+          name: role.name as string,
+          color_class: role.color_class as string || 'bg-gray-500/20 text-gray-500'
+        }
+      });
+
+      setRoleColors(assignableRoles);
+
+    } catch (error) {
+        console.error("Failed to fetch members:", error)
+        toast.error("Error", {
+          description: "Failed to load members. Please try again.",
+        });
+
+    } finally {
+      setLoadingData(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAllMembersAndRoles()
+  }, [fetchAllMembersAndRoles]);
 
   const handleEditRole = (memberId: string, currentRole: string) => {
     setEditingId(memberId);
     setTempRole(currentRole);
   };
 
-  const handleSaveRole = (memberId: string) => {
-    setMembers(members.map(member => 
-      member.id === memberId 
-        ? { ...member, role: tempRole }
-        : member
-    ));
-    setEditingId(null);
-    setTempRole('');
+  const handleSaveRole = async (memberId: string) => {
+    setLoadEditMemberRole(true);
+
+    try {
+      const roleId = availableRolesWithDescription.find(role => role.name.toLowerCase() === tempRole.toLocaleLowerCase())?.id
+
+      const res = await updateMemberRole(memberId, tempRole, roleId);
+
+      if (!res.success) {
+        console.error('Failed to update member role:', res.error);
+        throw new Error(res.error);
+      } else {
+        console.log('Role updated successfully');
+        
+        await fetchAllMembersAndRoles();
+
+        setEditingId(null);
+        setTempRole('');
+
+        toast.success('Member role updated successfully');
+      }
+
+    } catch (error: any) {
+      toast.error(error);
+    } finally {
+      setLoadEditMemberRole(false);
+    }
+    
   };
 
   const handleCancelEdit = () => {
@@ -55,7 +106,7 @@ export default function RolesPage() {
   };
 
   const getRoleCount = (role: string) => {
-    return members.filter(member => member.role === role).length;
+    return members.filter(member => member.member_role.toLowerCase() === role.toLowerCase()).length;
   };
 
   return (
@@ -83,7 +134,10 @@ export default function RolesPage() {
               <div key={role} className="text-center space-y-2">
                 <Badge 
                   variant="outline" 
-                  className={`w-full justify-center ${roleColors[role as keyof typeof roleColors] || 'bg-gray-500/20 text-gray-500'}`}
+                  className={`w-full justify-center 
+                    ${roleColors.filter(r => r.name === role)[0].color_class}
+                    ${role === "President" && "bg-amber-500/20 text-amber-500"}
+                  `}
                 >
                   {role}
                 </Badge>
@@ -101,84 +155,98 @@ export default function RolesPage() {
           <CardTitle>Member Roles</CardTitle>
           <CardDescription>Edit individual member roles and responsibilities</CardDescription>
         </CardHeader>
+
         <CardContent>
           <div className="border border-border rounded-lg overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Current Role</TableHead>
-                  <TableHead>Join Date</TableHead>
-                  <TableHead>Team</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {members.map((member) => (
-                  <TableRow key={member.id} className="border-border">
-                    <TableCell className="font-medium">{member.full_name}</TableCell>
-                    <TableCell>{member.email}</TableCell>
-                    <TableCell>
-                      {editingId === member.id ? (
-                        <select
-                          value={tempRole}
-                          onChange={(e) => setTempRole(e.target.value)}
-                          className="px-2 py-1 bg-input border border-border rounded text-sm"
-                        >
-                          {availableRoles.map((role) => (
-                            <option key={role} value={role}>{role}</option>
-                          ))}
-                        </select>
-                      ) : (
-                        <Badge 
-                          variant="outline"
-                          className={roleColors[member.role as keyof typeof roleColors] || 'bg-gray-500/20 text-gray-500'}
-                        >
-                          {member.role}
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>{new Date(member.created_at).toLocaleDateString()}</TableCell>
-                    {/* <TableCell>
-                      {member.teamId ? (
-                        <Badge variant="outline">Team {member.teamId.slice(-1)}</Badge>
-                      ) : (
-                        <span className="text-muted-foreground">No team</span>
-                      )}
-                    </TableCell> */}
-                    <TableCell className="text-right">
-                      {editingId === member.id ? (
-                        <div className="flex justify-end gap-2">
-                          <Button 
-                            size="sm" 
-                            onClick={() => handleSaveRole(member.id)}
-                            className="glow-blue"
-                          >
-                            <Save className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={handleCancelEdit}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => handleEditRole(member.id, member.role)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            {
+              loadingData ? (
+                <div className='flex items-center justify-center h-32 text-muted-foreground'>
+                  Loading Members... 
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead>Name</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Current Role</TableHead>
+                      <TableHead>Join Date</TableHead>
+                      {profileUser?.member_role === "president" && <TableHead className="text-right">Actions</TableHead>}
+                    </TableRow>
+                  </TableHeader>
+
+                  <TableBody>
+                    {members.map((member) => (
+                      <TableRow key={member.id} className="border-border">
+                        <TableCell className="font-medium">{member.full_name}</TableCell>
+                        <TableCell>{member.email}</TableCell>
+                        <TableCell>
+                          {editingId === member.id ? (
+                            <select
+                              value={tempRole}
+                              onChange={(e) => setTempRole(e.target.value)}
+                              className="px-2 py-1 bg-input dark:border-gray-950 border border-border rounded text-sm"
+                            >
+                              {availableRoles.map((role) => (
+                                <option key={role} value={role} className='dark:bg-gray-600 dark:border-gray-950 text-white'>{role}</option>
+                              ))}
+                            </select>
+                          ) : (
+                            <Badge 
+                              variant="outline"
+                              className={`capitalize 
+                                ${roleColors.filter(r => r.name.toLowerCase() === member.member_role)[0]?.color_class} 
+                                ${member.member_role === "president" && "bg-amber-500/20 text-amber-500"}                       
+                              `}
+                            >
+                              {member.member_role}
+                            </Badge>
+                          )}
+                        </TableCell>
+
+                        <TableCell>{new Date(member.created_at).toLocaleDateString()}</TableCell>
+
+                        {
+                          profileUser?.member_role === "president" && (
+                            <TableCell className="text-right">
+                              {editingId === member.id ? (
+                                <div className="flex justify-end gap-2">
+                                  <Button 
+                                    size="sm" 
+                                    onClick={() => handleSaveRole(member.id)}
+                                    className="glow-blue"
+                                    disabled={loadEditMemberRole}
+                                  >
+                                    <Save className="h-4 w-4" />
+                                  </Button>
+
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline"
+                                    onClick={handleCancelEdit}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              ) : (
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => handleEditRole(member.id, member.member_role)}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </TableCell>
+                          )
+                        }
+                      </TableRow>
+                    ))}
+                  </TableBody>
+
+                </Table>
+              )
+            }
           </div>
         </CardContent>
       </Card>
@@ -189,43 +257,19 @@ export default function RolesPage() {
           <CardTitle>Role Descriptions</CardTitle>
           <CardDescription>Understanding different roles and their responsibilities</CardDescription>
         </CardHeader>
+
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div>
-                <h4 className="font-medium text-blue-500 mb-2">Developer</h4>
-                <p className="text-sm text-muted-foreground">Responsible for coding, debugging, and implementing technical solutions.</p>
+            {availableRolesWithDescription.map((role) => (
+              <div key={role.id} className='space-y-4'>
+                <h4 className={`capitalize font-medium mb-2 ${role.color_class.split(" ")[1]}`}>{role.name}</h4>
+                <p className="text-sm text-muted-foreground">{role.description}</p>
               </div>
-              <div>
-                <h4 className="font-medium text-purple-500 mb-2">Designer</h4>
-                <p className="text-sm text-muted-foreground">Creates user interfaces, visual designs, and user experience solutions.</p>
-              </div>
-              <div>
-                <h4 className="font-medium text-green-500 mb-2">Manager</h4>
-                <p className="text-sm text-muted-foreground">Coordinates team activities, manages projects, and ensures deadlines are met.</p>
-              </div>
-              <div>
-                <h4 className="font-medium text-orange-500 mb-2">Tester</h4>
-                <p className="text-sm text-muted-foreground">Conducts quality assurance testing and identifies bugs and issues.</p>
-              </div>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <h4 className="font-medium text-pink-500 mb-2">Marketing</h4>
-                <p className="text-sm text-muted-foreground">Promotes CSI events, manages social media, and handles outreach.</p>
-              </div>
-              <div>
-                <h4 className="font-medium text-cyan-500 mb-2">Research</h4>
-                <p className="text-sm text-muted-foreground">Conducts research on new technologies and industry trends.</p>
-              </div>
-              <div>
-                <h4 className="font-medium text-red-500 mb-2">DevOps</h4>
-                <p className="text-sm text-muted-foreground">Manages deployment, infrastructure, and continuous integration processes.</p>
-              </div>
-            </div>
-          </div>
+            ))}
+          </div>  
         </CardContent>
       </Card>
+      
     </div>
   );
 }

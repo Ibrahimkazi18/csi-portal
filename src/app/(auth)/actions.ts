@@ -77,10 +77,29 @@ export async function signup(formData: { email : string, password: string}) {
 
 export async function createMember(member: {full_name: string, email: string, role: string, member_role: string, is_core_team: boolean}) {
   const supabase = await createClient();
+
+    // Step 1: Fetch the member_role ID from the name
+  const { data: roles, error: roleError } = await supabase
+    .from('member_roles')
+    .select('id')
+    .eq('name', member.member_role)
+    .single();
+
+  if (roleError) {
+    console.error('[CreateMember - Role Lookup]', roleError);
+    return { data: null, error: roleError };
+  }
+
+  // Step 2: Insert member with member_role_id instead of member_role name
   const { data, error } = await supabase.from('profile').insert({
-    ...member,
+    full_name: member.full_name,
+    email: member.email,
+    role: member.role,
+    memer_role: member.member_role,
+    member_role_id: roles.id,
+    is_core_team: member.is_core_team,
     created_at: new Date().toISOString().slice(0, 10),
-  })
+  });
 
   if (error) console.error('[CreateMember]', error)
     

@@ -51,6 +51,7 @@ export default function MembersPage() {
   useEffect(() => {
     fetchAllMembers()
   }, [fetchAllMembers]);
+  
 
   const filteredMembers = members
     .filter((member) => {
