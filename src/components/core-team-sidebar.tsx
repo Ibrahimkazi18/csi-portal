@@ -147,6 +147,7 @@ export default function CoreTeamSidebar() {
           </div>
         </div>
       </div>
+      
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-2">
         {sidebarItems.map((item) => {
@@ -195,7 +196,7 @@ export default function CoreTeamSidebar() {
         </div>
 
         <ThemeToggle />
-        
+
         <Button
           variant="outline"
           size="sm"

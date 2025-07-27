@@ -3,7 +3,6 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '../../utils/supabase/server';
-import { count } from 'console';
 
 export async function logOut() {
   const supabase = await createClient();
