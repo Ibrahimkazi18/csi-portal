@@ -136,7 +136,7 @@ export function EditGuideSectionModal({ isOpen, onClose, section, onSuccess }: E
               <SelectTrigger className="col-span-3 bg-input border-border">
                 <SelectValue placeholder="Select an icon" />
               </SelectTrigger>
-              <SelectContent className="bg-dark-surface border-border">
+              <SelectContent className="border-border">
                 {availableIcons.map((iconOption) => (
                   <SelectItem key={iconOption.value} value={iconOption.value}>
                     {iconOption.label}

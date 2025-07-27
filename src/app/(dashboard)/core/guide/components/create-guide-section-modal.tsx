@@ -128,7 +128,7 @@ export function CreateGuideSectionModal({ isOpen, onClose, onSuccess }: CreateGu
               <SelectTrigger className="col-span-3 bg-input border-border">
                 <SelectValue placeholder="Select an icon" />
               </SelectTrigger>
-              <SelectContent className="bg-dark-surface border-border max-h-60 overflow-y-auto">
+              <SelectContent className="border-border max-h-60 overflow-y-auto">
                 {availableIcons.map((iconOption) => (
                     <SelectItem key={iconOption.value} value={iconOption.value}>
                     <div className="flex items-center">
