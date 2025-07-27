@@ -31,13 +31,14 @@ export function EditMemberModal({ isOpen, onClose, member, onSuccess }: EditMemb
   const [role, setRole] = useState(member?.role || "")
   const [loading, setLoading] = useState(false)
 
-  const roles = ["Core", "Member"] // Example roles
+  const roles = ["Core", "Member"]
 
   useEffect(() => {
     if (member) {
       setFullName(member.full_name)
       setEmail(member.email)
-      setRole(member.role)
+      const normalizedRole = member.role?.toLowerCase() === "core" ? "Core" : "Member";
+      setRole(normalizedRole);
     }
   }, [member])
 

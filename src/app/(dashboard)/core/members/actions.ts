@@ -44,10 +44,16 @@ export async function createPendingMember(member: {full_name: string, email: str
   return { data, error }
 }
 
-export async function updateMember(id: string, updatedFields: Partial<Member>) {
+export async function updateMember(id: string, updatedFields: any) {
   const { data, error } = await supabase
     .from('profiles')
-    .update(updatedFields)
+    .update({
+      full_name: updatedFields.full_name,
+      email: updatedFields.email,
+      role: updatedFields.role.toLowerCase(),
+      updated_at: new Date().toISOString(),
+      is_core_team: updatedFields.role.toLowerCase() === 'core',
+    })
     .eq('id', id)
 
   if (error) console.error('[UpdateMember]', error)

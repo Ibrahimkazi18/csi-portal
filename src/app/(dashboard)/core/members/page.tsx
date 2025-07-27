@@ -212,6 +212,7 @@ export default function MembersPage() {
 
       {/* Modals */}
       <AddMemberModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onSuccess={fetchAllMembers} />
+
       <EditMemberModal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}

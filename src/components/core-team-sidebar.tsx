@@ -178,6 +178,7 @@ export default function CoreTeamSidebar() {
           )
         })}
       </nav>
+
       {/* User Info */}
       <div className="p-4 border-t border-border space-y-3">
         <div className="flex items-center gap-3 px-3 py-2">
@@ -186,12 +187,15 @@ export default function CoreTeamSidebar() {
               {user?.full_name.charAt(0).toUpperCase()}
             </span>
           </div>
+
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium truncate">{user?.full_name}</p>
             <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
           </div>
         </div>
+
         <ThemeToggle />
+        
         <Button
           variant="outline"
           size="sm"
