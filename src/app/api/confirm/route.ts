@@ -5,13 +5,10 @@ import { redirect } from 'next/navigation';
 import { createClient } from '../../../../utils/supabase/server';
 
 export async function GET(request: NextRequest) {
-  console.log("In confirm route");
   const { searchParams } = new URL(request.url);
   const token_hash = searchParams.get('token_hash');
   const type = searchParams.get('type') as EmailOtpType | null;
-  console.log("token_hash:", token_hash);
-  console.log("type:", type);
-  
+
   if (token_hash && type) {
     const supabase = await createClient();
 
@@ -20,8 +17,6 @@ export async function GET(request: NextRequest) {
       type,
       token_hash,
     });
-
-    console.log("user:", user);
 
     if (error || !user) {
       console.error('OTP verification failed:', error?.message);

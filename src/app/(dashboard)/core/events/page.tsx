@@ -1,248 +1,388 @@
-"use client";
+"use client"
 
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { Calendar, Plus, Users, User } from 'lucide-react';
-import { Event } from '@/types/auth';
-
-// Mock data
-const mockEvents: Event[] = [
-  {
-    id: '1',
-    title: 'Web Development Challenge',
-    description: 'Build a responsive website using modern web technologies',
-    maxParticipants: 50,
-    deadline: '2024-12-25',
-    type: 'individual',
-    status: 'active',
-    registeredCount: 23
-  },
-  {
-    id: '2',
-    title: 'Team Hackathon',
-    description: 'Create an innovative solution in 48 hours',
-    maxParticipants: 20,
-    deadline: '2024-12-30',
-    type: 'team',
-    status: 'active',
-    registeredCount: 8
-  },
-  {
-    id: '3',
-    title: 'Algorithm Contest',
-    description: 'Solve complex algorithmic problems',
-    maxParticipants: 100,
-    deadline: '2024-11-15',
-    type: 'individual',
-    status: 'ended',
-    registeredCount: 89
-  }
-];
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
+import { Plus, Calendar, Edit, Trash2, AlertCircle, Users, User, Settings, Trophy, Clock, MapPin } from "lucide-react"
+import { useCallback, useEffect, useState } from "react"
+import { toast } from "sonner"
+import { CreateEventModal } from "./components/create-event-modal"
+import { EditEventModal } from "./components/edit-event-modal"
+import { DeleteEventDialog } from "./components/delete-event-modal"
+import { EventRoundsModal } from "./components/event-rounds-modal"
+import { getAllEventRounds, getEvents } from "./actions"
 
 export default function EventsPage() {
-  const [events, setEvents] = useState<Event[]>(mockEvents);
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [newEvent, setNewEvent] = useState({
-    title: '',
-    description: '',
-    maxParticipants: '',
-    deadline: '',
-    type: 'individual' as 'individual' | 'team'
-  });
+  const [loadingData, setLoadingData] = useState(true)
+  const [events, setEvents] = useState<any[]>([])
+  const [eventsRounds, setEventsRounds] = useState<any[]>([])
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [isRoundsModalOpen, setIsRoundsModalOpen] = useState(false)
+  const [selectedEvent, setSelectedEvent] = useState<any>(null)
+  const [isManagementMode, setIsManagementMode] = useState(false)
 
-  const handleCreateEvent = (e: React.FormEvent) => {
-    e.preventDefault();
-    const event: Event = {
-      id: Date.now().toString(),
-      title: newEvent.title,
-      description: newEvent.description,
-      maxParticipants: parseInt(newEvent.maxParticipants),
-      deadline: newEvent.deadline,
-      type: newEvent.type,
-      status: 'active',
-      registeredCount: 0
-    };
-    
-    setEvents([event, ...events]);
-    setNewEvent({
-      title: '',
-      description: '',
-      maxParticipants: '',
-      deadline: '',
-      type: 'individual'
-    });
-    setShowCreateForm(false);
-  };
+  const handleEventsOnLoad = useCallback(async () => {
+    setLoadingData(true)
+    try {
+      const [responseEvents, responseEventRounds] = await Promise.all([
+        getEvents(),
+        getAllEventRounds(),
+      ])
+      if (responseEvents.error) {
+        throw new Error(responseEvents.error)
+      }
+      else if(responseEvents.data) {
+        setEvents(responseEvents.data)
+      }
+
+      if (responseEventRounds.error) {
+        throw new Error(responseEventRounds.error);
+
+      } else if (responseEventRounds.data) {
+        setEventsRounds(responseEventRounds.data)
+      }
+    } catch (error) {
+      console.error("Failed to fetch announcements:", error)
+      toast.error("Error", {
+        description: "Failed to load announcements. Please try again.",
+      })
+    } finally {
+      setLoadingData(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    handleEventsOnLoad()
+  }, [handleEventsOnLoad])
+
+
+  const handleEditEvent = (event: any) => {
+    setSelectedEvent(event)
+    setIsEditModalOpen(true)
+  }
+
+  const handleDeleteEvent = (event: any) => {
+    setSelectedEvent(event)
+    setIsDeleteDialogOpen(true)
+  }
+
+  const handleManageRounds = (event: any) => {
+    setSelectedEvent(event)
+    setIsRoundsModalOpen(true)
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!selectedEvent) return
+    try {
+      // Replace with actual delete API call
+      toast.success("Event deleted successfully")
+      handleEventsOnLoad()
+      setIsDeleteDialogOpen(false)
+      setSelectedEvent(null)
+    } catch (error: any) {
+      toast.error("Error deleting event", {
+        description: error.message || "Failed to delete event.",
+      })
+    }
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "upcoming":
+        return "bg-blue-500/20 text-blue-400 border-blue-500/30"
+      case "registration_open":
+        return "bg-green-500/20 text-green-400 border-green-500/30"
+      case "ongoing":
+        return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
+      case "completed":
+        return "bg-gray-500/20 text-gray-400 border-gray-500/30"
+      case "cancelled":
+        return "bg-red-500/20 text-red-400 border-red-500/30"
+      default:
+        return "bg-gray-500/20 text-gray-400 border-gray-500/30"
+    }
+  }
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "upcoming":
+        return Clock
+      case "registration_open":
+        return Users
+      case "ongoing":
+        return MapPin
+      case "completed":
+        return Trophy
+      case "cancelled":
+        return AlertCircle
+      default:
+        return Clock
+    }
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-neon">Events Management</h1>
-          <p className="text-muted-foreground">Create and manage CSI events</p>
+          <p className="text-muted-foreground">Create and manage CSI events and competitions</p>
         </div>
-        <Button 
-          onClick={() => setShowCreateForm(!showCreateForm)} 
-          className="glow-blue"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Create Event
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            onClick={() => setIsManagementMode(!isManagementMode)}
+            className={isManagementMode ? "glow-purple" : ""}
+          >
+            <Settings className="h-4 w-4 mr-2" />
+            {isManagementMode ? "Exit Management" : "Manage Events"}
+          </Button>
+          <Button className="glow-blue" onClick={() => setIsCreateModalOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Create Event
+          </Button>
+        </div>
       </div>
 
-      {/* Create Event Form */}
-      {showCreateForm && (
-        <Card className="bg-dark-surface border-border glow-blue">
-          <CardHeader>
-            <CardTitle>Create New Event</CardTitle>
-            <CardDescription>Fill in the details to create a new event</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleCreateEvent} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="title">Event Title</Label>
-                  <Input
-                    id="title"
-                    value={newEvent.title}
-                    onChange={(e) => setNewEvent({...newEvent, title: e.target.value})}
-                    placeholder="Enter event title"
-                    required
-                    className="bg-input border-border"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="maxParticipants">Max Participants</Label>
-                  <Input
-                    id="maxParticipants"
-                    type="number"
-                    value={newEvent.maxParticipants}
-                    onChange={(e) => setNewEvent({...newEvent, maxParticipants: e.target.value})}
-                    placeholder="50"
-                    required
-                    className="bg-input border-border"
-                  />
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={newEvent.description}
-                  onChange={(e) => setNewEvent({...newEvent, description: e.target.value})}
-                  placeholder="Describe the event..."
-                  required
-                  className="bg-input border-border"
-                />
-              </div>
+      {/* Active Events Section */}
+      <Card className="bg-dark-surface border-border">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5 text-primary" />
+            Active Events
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">Currently running and upcoming events</p>
+        </CardHeader>
+        <CardContent>
+          {loadingData ? (
+            <div className="text-center py-8 text-muted-foreground">Loading events...</div>
+          ) : events.length === 0 ? (
+            <div className="text-center py-8">
+              <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium mb-2">No events yet</h3>
+              <p className="text-muted-foreground mb-4">Create your first event to get started!</p>
+              <Button onClick={() => setIsCreateModalOpen(true)} className="glow-blue">
+                <Plus className="h-4 w-4 mr-2" />
+                Create First Event
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {events.map((event) => {
+                const StatusIcon = getStatusIcon(event.status)
+                const progressPercentage = (event.registered_count / event.max_participants) * 100 || 0
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="deadline">Deadline</Label>
-                  <Input
-                    id="deadline"
-                    type="date"
-                    value={newEvent.deadline}
-                    onChange={(e) => setNewEvent({...newEvent, deadline: e.target.value})}
-                    required
-                    className="bg-input border-border"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="type">Event Type</Label>
-                  <select
-                    id="type"
-                    value={newEvent.type}
-                    onChange={(e) => setNewEvent({...newEvent, type: e.target.value as 'individual' | 'team'})}
-                    className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground"
+                return (
+                  <div
+                    key={event.id}
+                    className={`p-6 rounded-lg border transition-all ${
+                      event.is_tournament
+                        ? "border-yellow-500/30 bg-yellow-500/5 glow-yellow"
+                        : "border-border bg-muted/20"
+                    }`}
                   >
-                    <option value="individual">Individual</option>
-                    <option value="team">Team</option>
-                  </select>
-                </div>
-              </div>
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <h3 className="text-xl font-semibold text-foreground">{event.title}</h3>
+                        {event.is_tournament && (
+                          <Badge variant="outline" className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
+                            <Trophy className="h-3 w-3 mr-1" />
+                            Tournament
+                          </Badge>
+                        )}
+                        <Badge variant="outline" className={`text-xs ${getStatusColor(event.status)}`}>
+                          <StatusIcon className="h-3 w-3 mr-1" />
+                          {event.status.replace("_", " ")}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        {event.type === "team" ? <Users className="h-4 w-4" /> : <User className="h-4 w-4" />}
+                        <span className="text-sm capitalize">{event.type}</span>
+                        {event.type === "team" && <span className="text-sm">({event.team_size} members)</span>}
+                      </div>
+                    </div>
 
-              <div className="flex gap-3">
-                <Button type="submit" className="glow-blue">
-                  Create Event
-                </Button>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setShowCreateForm(false)}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
+                    <p className="text-foreground leading-relaxed mb-4">{event.description}</p>
 
-      {/* Events List */}
-      <div className="grid gap-6">
-        <h2 className="text-xl font-semibold">All Events</h2>
-        {events.map((event) => (
-          <Card key={event.id} className="bg-dark-surface border-border">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm mb-4">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <span className="text-muted-foreground">Registration: </span>
+                          <span className="font-medium">
+                            {new Date(event.registration_deadline).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <span className="text-muted-foreground">Start: </span>
+                          <span className="font-medium">{new Date(event.start_date).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Participants: </span>
+                        <span className="font-medium">
+                          {event.registered_count || 0}/{event.max_participants}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Progress: </span>
+                        <span className="font-medium">{Math.round(progressPercentage)}%</span>
+                      </div>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="w-full bg-muted rounded-full h-2 mb-4">
+                      <div
+                        className="bg-primary h-2 rounded-full transition-all duration-300 glow-blue"
+                        style={{ width: `${progressPercentage}%` }}
+                      />
+                    </div>
+
+                    {/* Action Buttons */}
+                    {!isManagementMode && (
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleManageRounds(event)}
+                          className="text-xs"
+                        >
+                          Manage Rounds
+                        </Button>
+                        {
+                          event.status !== "upcoming" &&
+                            <Button size="sm" variant="outline" className="text-xs bg-transparent">
+                              View Registrations
+                            </Button>
+                        }
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Management Section */}
+      {isManagementMode && (
+        <>
+          <Separator className="my-6" />
+          <Card className="bg-dark-surface border-border">
             <CardHeader>
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    {event.title}
-                    <Badge 
-                      variant={event.status === 'active' ? 'default' : 'secondary'}
-                      className={event.status === 'active' ? 'glow-blue' : ''}
-                    >
-                      {event.status}
-                    </Badge>
-                  </CardTitle>
-                  <CardDescription className="mt-2">
-                    {event.description}
-                  </CardDescription>
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  {event.type === 'team' ? <Users className="h-4 w-4" /> : <User className="h-4 w-4" />}
-                  <span className="text-sm capitalize">{event.type}</span>
-                </div>
-              </div>
+              <CardTitle className="flex items-center gap-2">
+                <Settings className="h-5 w-5 text-primary" />
+                Manage All Events
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">Edit and delete all events. Total: {events.length} events</p>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span>Deadline: {new Date(event.deadline).toLocaleDateString()}</span>
+              {events.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">No events to manage.</div>
+              ) : (
+                <div className="space-y-3">
+                  {events.map((event) => {
+                    const StatusIcon = getStatusIcon(event.status)
+                    return (
+                      <div
+                        key={event.id}
+                        className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/10 hover:bg-muted/20 transition-colors group"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-medium text-foreground truncate">{event.title}</h4>
+                            {event.is_tournament && (
+                              <Badge
+                                variant="outline"
+                                className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-xs"
+                              >
+                                <Trophy className="h-3 w-3 mr-1" />
+                                Tournament
+                              </Badge>
+                            )}
+                            <Badge variant="outline" className={`text-xs ${getStatusColor(event.status)}`}>
+                              <StatusIcon className="h-3 w-3 mr-1" />
+                              {event.status.replace("_", " ")}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground truncate">{event.description}</p>
+                          <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
+                            <div className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              {new Date(event.start_date).toLocaleDateString()}
+                            </div>
+                            <div>
+                              {event.registered_count}/{event.max_participants} registered
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleManageRounds(event)}
+                            className="h-8 px-3 text-xs"
+                          >
+                            Rounds
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleEditEvent(event)}
+                            className="h-8 w-8 p-0"
+                          >
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDeleteEvent(event)}
+                            className="h-8 w-8 p-0"
+                            disabled={event.status === "ongoing"}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
-                <div>
-                  <span className="text-muted-foreground">Participants: </span>
-                  <span className="font-medium">
-                    {event.registeredCount}/{event.maxParticipants}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Progress: </span>
-                  <span className="font-medium">
-                    {Math.round((event.registeredCount / event.maxParticipants) * 100)}%
-                  </span>
-                </div>
-              </div>
-              
-              {/* Progress Bar */}
-              <div className="mt-4 w-full bg-muted rounded-full h-2">
-                <div 
-                  className="bg-primary h-2 rounded-full transition-all duration-300 glow-blue"
-                  style={{ width: `${(event.registeredCount / event.maxParticipants) * 100}%` }}
-                />
-              </div>
+              )}
             </CardContent>
           </Card>
-        ))}
-      </div>
+        </>
+      )}
+
+      {/* Modals */}
+      <CreateEventModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={handleEventsOnLoad}
+      />
+      <EditEventModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        event={selectedEvent}
+        onSuccess={handleEventsOnLoad}
+      />
+      <DeleteEventDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        event={selectedEvent}
+        onConfirm={handleDeleteConfirm}
+      />
+      <EventRoundsModal
+        isOpen={isRoundsModalOpen}
+        onClose={() => setIsRoundsModalOpen(false)}
+        event={selectedEvent}
+        onSuccess={handleEventsOnLoad}
+      />
     </div>
-  );
+  )
 }
