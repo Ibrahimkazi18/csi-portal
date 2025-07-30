@@ -44,7 +44,9 @@ export function EventRoundsModal({ isOpen, onClose, event, onSuccess }: EventRou
   const [editingRound, setEditingRound] = useState<Round | null>(null)
 
   const handleEventsOnLoad = useCallback(async () => {
-    setLoadingData(true)
+    setLoadingData(true);
+    console.log("event:", event);
+
     try {
       const [responseEventRounds] = await Promise.all([
         getEventRounds(event.id),
@@ -55,6 +57,11 @@ export function EventRoundsModal({ isOpen, onClose, event, onSuccess }: EventRou
 
       } else if (responseEventRounds.data) {
         setRounds(responseEventRounds.data)
+        setNewRound({
+          title: "",
+          description: "",
+          round_number: responseEventRounds.data.length + 1,
+        })
       }
     } catch (error) {
       console.error("Failed to fetch rounds:", error)
@@ -67,8 +74,14 @@ export function EventRoundsModal({ isOpen, onClose, event, onSuccess }: EventRou
   }, [])
 
   useEffect(() => {
+    if (!event || !event.id) {
+      console.warn("Event is null or missing ID, skipping rounds fetch");
+      setLoadingData(false);
+      return;
+    }
+
     handleEventsOnLoad()
-  }, [handleEventsOnLoad])
+  }, [handleEventsOnLoad, event])
 
   const handleAddRound = () => {
     if (!newRound.title.trim() || !newRound.description.trim()) {

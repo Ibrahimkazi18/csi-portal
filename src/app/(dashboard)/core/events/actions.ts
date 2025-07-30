@@ -144,19 +144,6 @@ export async function getEventRounds(event_id: string) {
   return { success: true, data }
 }
 
-export async function getAllEventRounds() {
-  const supabase = await createClient();
-
-  const { data, error } = await supabase
-    .from('event_rounds')
-    .select('*')
-    .order('created_at', { ascending: false })
-
-  if (error) return { success: false, error: error.message }
-
-  return { success: true, data }
-}
-
 export async function addEventRounds(
     eventId: string, 
     rounds: { 

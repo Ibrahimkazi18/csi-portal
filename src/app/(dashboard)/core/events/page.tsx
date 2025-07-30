@@ -11,12 +11,11 @@ import { CreateEventModal } from "./components/create-event-modal"
 import { EditEventModal } from "./components/edit-event-modal"
 import { DeleteEventDialog } from "./components/delete-event-modal"
 import { EventRoundsModal } from "./components/event-rounds-modal"
-import { getAllEventRounds, getEvents } from "./actions"
+import { getEvents } from "./actions"
 
 export default function EventsPage() {
   const [loadingData, setLoadingData] = useState(true)
   const [events, setEvents] = useState<any[]>([])
-  const [eventsRounds, setEventsRounds] = useState<any[]>([])
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -27,9 +26,8 @@ export default function EventsPage() {
   const handleEventsOnLoad = useCallback(async () => {
     setLoadingData(true)
     try {
-      const [responseEvents, responseEventRounds] = await Promise.all([
+      const [responseEvents] = await Promise.all([
         getEvents(),
-        getAllEventRounds(),
       ])
       if (responseEvents.error) {
         throw new Error(responseEvents.error)
@@ -38,12 +36,6 @@ export default function EventsPage() {
         setEvents(responseEvents.data)
       }
 
-      if (responseEventRounds.error) {
-        throw new Error(responseEventRounds.error);
-
-      } else if (responseEventRounds.data) {
-        setEventsRounds(responseEventRounds.data)
-      }
     } catch (error) {
       console.error("Failed to fetch announcements:", error)
       toast.error("Error", {
@@ -377,12 +369,16 @@ export default function EventsPage() {
         event={selectedEvent}
         onConfirm={handleDeleteConfirm}
       />
-      <EventRoundsModal
-        isOpen={isRoundsModalOpen}
-        onClose={() => setIsRoundsModalOpen(false)}
-        event={selectedEvent}
-        onSuccess={handleEventsOnLoad}
-      />
+      {
+        isRoundsModalOpen && 
+        
+        <EventRoundsModal
+          isOpen={isRoundsModalOpen}
+          onClose={() => setIsRoundsModalOpen(false)}
+          event={selectedEvent}
+          onSuccess={handleEventsOnLoad}
+        />
+      }
     </div>
   )
 }
