@@ -8,7 +8,6 @@ import { Calendar, Users, User, Trophy, Clock, MapPin, AlertCircle, Bell, UserPl
 import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
 import { getAllEvents } from "./actions"
-import { EventRegistrationModal } from "./components/event-registration-modal"
 import { TeamInvitationsCard } from "./components/team-invitations-card"
 import { PendingTeamsCard } from "./components/pending-team-cards"
 import { TeamApplicationsCard } from "./components/team-applications-card"
@@ -21,8 +20,6 @@ export default function MemberEventsPage() {
     upcoming: [],
     completed: [],
   })
-  const [isRegistrationModalOpen, setIsRegistrationModalOpen] = useState(false)
-  const [selectedEvent, setSelectedEvent] = useState<any>(null)
   const [showInvitations, setShowInvitations] = useState(false)
   const [showPendingTeams, setShowPendingTeams] = useState(false)
   const [showApplications, setShowApplications] = useState(false)
@@ -48,11 +45,6 @@ export default function MemberEventsPage() {
   useEffect(() => {
     handleAllEventsOnLoad()
   }, [handleAllEventsOnLoad])
-
-  const handleRegisterForEvent = (event: any) => {
-    setSelectedEvent(event)
-    setIsRegistrationModalOpen(true)
-  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -182,15 +174,6 @@ export default function MemberEventsPage() {
                 View Details
               </Button>
             </Link>
-            {showRegisterButton && (
-              <Button
-                onClick={() => handleRegisterForEvent(event)}
-                disabled={deadlinePassed}
-                className={deadlinePassed ? "" : "glow-blue"}
-              >
-                {deadlinePassed ? "Registration Closed" : "Register Now"}
-              </Button>
-            )}
           </div>
         </div>
       </div>
@@ -315,14 +298,6 @@ export default function MemberEventsPage() {
           )}
         </>
       )}
-
-      {/* Registration Modal */}
-      <EventRegistrationModal
-        isOpen={isRegistrationModalOpen}
-        onClose={() => setIsRegistrationModalOpen(false)}
-        event={selectedEvent}
-        onSuccess={handleAllEventsOnLoad}
-      />
     </div>
   )
 }

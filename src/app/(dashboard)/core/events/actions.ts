@@ -212,3 +212,177 @@ export async function deleteEventRound(id: string) {
 
   return { success: true, message: 'Event deleted successfully' }
 }
+
+
+// Get Registered Teams
+export async function getRegisteredTeams() {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    return { success: false, error: "User not authenticated" };
+  }
+
+  // fetching registered teams for the event
+  const { data: registrations, error: registrationError } = await supabase
+  .from("event_registrations")
+  .select(
+    `
+    id,
+    registration_type,
+    status,
+    user_id,
+    team_id,
+    event_id,
+    teams(
+      id,
+      name,
+      leader_id,
+      team_members(
+        member_id,
+        profiles(full_name, email)
+      )
+    ),
+    profiles(full_name, email)
+  `,
+  )
+
+  if (registrationError || !registrations) {
+    return { success: false, error: "Registration not found" };
+  }
+
+  const groupedByEvent: Record<string, typeof registrations> = {};
+
+  for (const reg of registrations) {
+    const eventId = reg.event_id;
+    if (!groupedByEvent[eventId]) {
+      groupedByEvent[eventId] = [];
+    }
+    groupedByEvent[eventId].push(reg);
+  }
+
+  return { success: true, data: groupedByEvent };
+}
+
+export async function getEventRegistrations(eventId: string) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
+
+  if (userError || !user) {
+    return { success: false, error: "User not authenticated" }
+  }
+
+  // Get event details
+  const { data: event, error: eventError } = await supabase.from("events").select("*").eq("id", eventId).single();
+
+  if (eventError || !event) {
+    return { success: false, error: "Event not found" }
+  }
+
+  // Get all registrations for this event
+  const { data: registrations, error: regError } = await supabase
+    .from("event_registrations")
+    .select(`
+      id,
+      registration_type,
+      status,
+      user_id,
+      team_id,
+      registered_at,
+      teams(
+        id,
+        name,
+        leader_id,
+        team_members(
+          member_id,
+          profiles(full_name, email)
+        )
+      ),
+      profiles(full_name, email)
+    `)
+    .eq("event_id", eventId)
+
+  if (regError) {
+    console.error("regError:", regError.message);
+    return { success: false, error: "Failed to fetch registrations" }
+  }
+
+  // Get incomplete teams (teams with pending invitations)
+  const { data: incompleteTeams, error: incompleteError } = await supabase
+    .from("teams")
+    .select(`
+      id,
+      name,
+      leader_id,
+      description,
+      team_members(
+        member_id,
+        profiles(full_name, email)
+      ),
+      team_invitations(
+        id,
+        status,
+        invitee_id,
+        created_at,
+        profiles!team_invitations_invitee_id_fkey(full_name, email)
+      )
+    `)
+    .not(
+      "id",
+      "in",
+      `(${
+        registrations
+          ?.filter((r) => r.team_id)
+          .map((r) => r.team_id)
+          .join(",") || "null"
+      })`,
+    )
+  
+  // Filter teams that have pending invitations or are incomplete
+  const filteredIncompleteTeams =
+    incompleteTeams
+      ?.filter((team) => {
+        const currentMembers = team.team_members?.length || 0
+        const hasPendingInvitations = team.team_invitations?.some((inv) => inv.status === "pending")
+        return currentMembers < event.team_size || hasPendingInvitations
+      })
+      .map((team) => ({
+        ...team,
+        pending_invitations: team.team_invitations?.map((inv) => ({
+          ...inv,
+          invitee_profile: inv.profiles,
+        })),
+      })) || []
+
+  // Separate complete teams and individual registrations
+  const completeTeams =
+    registrations
+      ?.filter(
+        (reg) =>
+          reg.registration_type === "team" && reg.teams && ((reg.teams as any).team_members?.length || 0) >= event.team_size,
+      )
+      .map((reg) => reg.teams) || []
+
+  const individualRegistrations = registrations?.filter((reg) => reg.registration_type === "individual") || []
+
+  return {
+    success: true,
+    data: {
+      event,
+      registrations: {
+        completeTeams,
+        incompleteTeams: filteredIncompleteTeams,
+        individualRegistrations,
+        pendingInvitations: [],
+      },
+    },
+  }
+}

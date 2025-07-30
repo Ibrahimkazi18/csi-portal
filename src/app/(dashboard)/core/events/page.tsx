@@ -11,7 +11,8 @@ import { CreateEventModal } from "./components/create-event-modal"
 import { EditEventModal } from "./components/edit-event-modal"
 import { DeleteEventDialog } from "./components/delete-event-modal"
 import { EventRoundsModal } from "./components/event-rounds-modal"
-import { getEvents } from "./actions"
+import { deleteEvent, getEvents, getRegisteredTeams } from "./actions"
+import { useRouter } from "next/navigation"
 
 export default function EventsPage() {
   const [loadingData, setLoadingData] = useState(true)
@@ -22,18 +23,31 @@ export default function EventsPage() {
   const [isRoundsModalOpen, setIsRoundsModalOpen] = useState(false)
   const [selectedEvent, setSelectedEvent] = useState<any>(null)
   const [isManagementMode, setIsManagementMode] = useState(false)
+  const [registeredTeams, setRegisteredTeams] = useState<any>({});
+
+  const router = useRouter();
 
   const handleEventsOnLoad = useCallback(async () => {
     setLoadingData(true)
     try {
-      const [responseEvents] = await Promise.all([
+      const [responseEvents, responseRegisteredTeams] = await Promise.all([
         getEvents(),
-      ])
+        getRegisteredTeams()
+      ]);
+
       if (responseEvents.error) {
         throw new Error(responseEvents.error)
       }
       else if(responseEvents.data) {
         setEvents(responseEvents.data)
+      }
+
+      if (responseRegisteredTeams.error) {
+        console.error(responseRegisteredTeams.error);
+        throw new Error(responseRegisteredTeams.error)
+      }
+      else if(responseRegisteredTeams.data) {
+        setRegisteredTeams(responseRegisteredTeams.data)
       }
 
     } catch (error) {
@@ -69,11 +83,18 @@ export default function EventsPage() {
   const handleDeleteConfirm = async () => {
     if (!selectedEvent) return
     try {
-      // Replace with actual delete API call
-      toast.success("Event deleted successfully")
-      handleEventsOnLoad()
-      setIsDeleteDialogOpen(false)
-      setSelectedEvent(null)
+      const response = await deleteEvent(selectedEvent.id);
+
+      if(response.success) {
+        toast.success("Event deleted successfully")
+        handleEventsOnLoad()
+        setIsDeleteDialogOpen(false)
+        setSelectedEvent(null)
+      }
+      else {
+        throw new Error(response.error);
+      }
+
     } catch (error: any) {
       toast.error("Error deleting event", {
         description: error.message || "Failed to delete event.",
@@ -164,7 +185,8 @@ export default function EventsPage() {
             <div className="space-y-4">
               {events.map((event) => {
                 const StatusIcon = getStatusIcon(event.status)
-                const progressPercentage = (event.registered_count / event.max_participants) * 100 || 0
+                const teamsEvent = registeredTeams[event.id];
+                const progressPercentage = (teamsEvent.length / event.max_participants) * 100 || 0
 
                 return (
                   <div
@@ -218,7 +240,7 @@ export default function EventsPage() {
                       <div>
                         <span className="text-muted-foreground">Participants: </span>
                         <span className="font-medium">
-                          {event.registered_count || 0}/{event.max_participants}
+                          {teamsEvent.length || 0}/{event.max_participants}
                         </span>
                       </div>
                       <div>
@@ -248,7 +270,12 @@ export default function EventsPage() {
                         </Button>
                         {
                           event.status !== "upcoming" &&
-                            <Button size="sm" variant="outline" className="text-xs bg-transparent">
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="text-xs bg-transparent"
+                              onClick={() => router.push(`/core/events/${event.id}/registrations`)}
+                            >
                               View Registrations
                             </Button>
                         }

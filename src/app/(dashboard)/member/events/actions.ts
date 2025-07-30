@@ -278,6 +278,7 @@ export async function createTeam(
     .from("events")
     .select("id, title, team_size, is_tournament")
     .eq("id", eventId)
+    .eq('status', 'registration_open')
     .single()
 
   if (eventError || !event) throw new Error("Event not found")
