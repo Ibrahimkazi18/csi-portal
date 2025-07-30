@@ -125,7 +125,7 @@ export default function EventRegistrationsPage() {
             Back to Events
           </Button>
         </Link>
-        <div className="flex-1">
+        <div className="flex-1">  
           <div className="flex items-center gap-3 mb-2">
             <h1 className="text-3xl font-bold text-neon">Event Registrations</h1>
             {eventData.is_tournament && (
