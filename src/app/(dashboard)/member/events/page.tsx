@@ -31,6 +31,7 @@ export default function MemberEventsPage() {
       if (!response.success) {
         throw new Error(response.message || "Failed to fetch events")
       }
+      console.log(response.data)
       setEventsData(response.data || { registrationOpen: [], upcoming: [], completed: [] })
     } catch (error: any) {
       console.error("Failed to fetch events:", error)

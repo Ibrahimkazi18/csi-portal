@@ -51,7 +51,7 @@ export async function getAllEvents() {
     .select(
       "id, title, description, banner_url, max_participants, team_size, registration_deadline, start_date, end_date, type, is_tournament, category, status, created_at",
     )
-    .order("start_date", { ascending: true })
+    .order("start_date", { ascending: true });
 
   // Apply tournament filtering
   if (teamIds.length > 0) {
