@@ -125,6 +125,7 @@ export default function EventDetailsPage() {
         description: response.message,
       })
       handleEventDetailsOnLoad()
+      
     } catch (error: any) {
       toast.error("Error", {
         description: error.message || "Failed to respond to invitation",
