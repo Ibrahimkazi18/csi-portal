@@ -43,7 +43,6 @@ export default function EventsPage() {
       }
 
       if (responseRegisteredTeams.error) {
-        console.error(responseRegisteredTeams.error);
         throw new Error(responseRegisteredTeams.error)
       }
       else if(responseRegisteredTeams.data) {
@@ -185,8 +184,9 @@ export default function EventsPage() {
             <div className="space-y-4">
               {events.map((event) => {
                 const StatusIcon = getStatusIcon(event.status)
-                const teamsEvent = registeredTeams[event.id];
-                const progressPercentage = (teamsEvent.length / event.max_participants) * 100 || 0
+                const teamsEvent = registeredTeams[event.id] || [];
+                const progressPercentage = 
+                  teamsEvent.length ? (teamsEvent.length / (event.max_participants / event.team_size)) * 100 : 0;
 
                 return (
                   <div
@@ -240,7 +240,7 @@ export default function EventsPage() {
                       <div>
                         <span className="text-muted-foreground">Participants: </span>
                         <span className="font-medium">
-                          {teamsEvent.length || 0}/{event.max_participants}
+                          {teamsEvent.length || 0}/{event.max_participants / event.team_size}
                         </span>
                       </div>
                       <div>
@@ -278,6 +278,39 @@ export default function EventsPage() {
                             >
                               View Registrations
                             </Button>
+                        }
+                        {
+                          event.status === "ongoing" &&
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="text-xs bg-transparent"
+                              onClick={() => router.push(`/core/events/${event.id}/live`)}
+                            >
+                              Live Event
+                            </Button>
+                        }
+                        {
+                          event.status === "completed" &&
+                            <>
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                className="text-xs bg-transparent"
+                                onClick={() => router.push(`/core/events/${event.id}/live`)}
+                              >
+                                Live Event
+                              </Button>
+
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                className="text-xs bg-transparent"
+                                onClick={() => router.push(`/core/events/${event.id}/result`)}
+                                >
+                                Event Results
+                              </Button>
+                            </>
                         }
                       </div>
                     )}

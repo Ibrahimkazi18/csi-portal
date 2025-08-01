@@ -1,7 +1,6 @@
 "use server"
 
 import { createClient } from "../../../../../../../utils/supabase/server"
-import { revalidatePath } from "next/cache"
 
 /**
  * Used to display the live event management board
@@ -173,7 +172,6 @@ export async function moveToNextRound({
     return { success: false, error: insertError.message }
   }
 
-  revalidatePath(`/events/${eventId}/live`)
   return { success: true, message: "Moved to next round successfully" }
 }
 
@@ -219,7 +217,6 @@ export async function eliminateParticipant({
     return { success: false, error: error.message }
   }
 
-  revalidatePath(`/events/${eventId}/live`)
   return { success: true, message: "Participant eliminated successfully" }
 }
 
@@ -266,7 +263,6 @@ export async function setEventWinners({
     return { success: false, error: error.message }
   }
 
-  revalidatePath(`/events/${eventId}/live`)
   return { success: true, message: "Winners set successfully" }
 }
 
@@ -314,8 +310,6 @@ export async function completeEvent(eventId: string) {
     await calculateTournamentPoints(eventId)
   }
 
-  revalidatePath(`/events/${eventId}/live`)
-  revalidatePath(`/events`)
   return { success: true, message: "Event completed successfully" }
 }
 
@@ -424,6 +418,5 @@ export async function resetEventProgress(eventId: string) {
     return { success: false, error: error.message }
   }
 
-  revalidatePath(`/events/${eventId}/live`)
   return { success: true, message: "Event progress reset successfully" }
 }

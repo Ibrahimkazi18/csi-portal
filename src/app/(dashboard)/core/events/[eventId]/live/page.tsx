@@ -1,7 +1,5 @@
 "use client"
 
-import type React from "react"
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -19,6 +17,7 @@ import {
   CheckCircle,
   AlertTriangle,
   Target,
+  ChevronRight,
 } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
@@ -60,10 +59,10 @@ export default function LiveEventPage() {
 
   const [loading, setLoading] = useState(true)
   const [eventData, setEventData] = useState<any>(null)
-  const [draggedItem, setDraggedItem] = useState<any>(null)
   const [isCompleting, setIsCompleting] = useState(false)
   const [isResetting, setIsResetting] = useState(false)
   const [winnersDialogOpen, setWinnersDialogOpen] = useState(false)
+  const [movingParticipant, setMovingParticipant] = useState<string | null>(null)
   const [selectedWinners, setSelectedWinners] = useState<Array<{ position: number; teamId?: string; userId?: string }>>(
     [{ position: 1 }, { position: 2 }, { position: 3 }],
   )
@@ -89,39 +88,29 @@ export default function LiveEventPage() {
     loadEventData()
   }, [loadEventData])
 
-  const handleDragStart = (e: React.DragEvent, participant: any) => {
-    setDraggedItem(participant)
-    e.dataTransfer.effectAllowed = "move"
-  }
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
-    e.dataTransfer.dropEffect = "move"
-  }
-
-  const handleDrop = async (e: React.DragEvent, targetRoundId: string | null) => {
-    e.preventDefault()
-    if (!draggedItem) return
-
-    const currentProgress = eventData.progress.find(
-      (p: any) =>
-        (p.team_id === draggedItem.team_id && p.user_id === draggedItem.user_id) ||
-        (draggedItem.team_id && p.team_id === draggedItem.team_id) ||
-        (draggedItem.user_id && p.user_id === draggedItem.user_id),
-    )
-
-    const fromRoundId = currentProgress?.round_id || null
-
-    if (fromRoundId === targetRoundId) {
-      setDraggedItem(null)
-      return
-    }
+  const handleMoveParticipant = async (participant: any, targetRoundId: string | null) => {
+    const participantKey = participant.team_id || participant.user_id
+    setMovingParticipant(participantKey)
 
     try {
+      // Find current progress
+      const currentProgress = eventData.progress.find(
+        (p: any) =>
+          (p.team_id === participant.team_id && p.user_id === participant.user_id) ||
+          (participant.team_id && p.team_id === participant.team_id) ||
+          (participant.user_id && p.user_id === participant.user_id),
+      )
+
+      const fromRoundId = currentProgress?.round_id || null
+
+      if (fromRoundId === targetRoundId) {
+        return
+      }
+
       const response = await moveToNextRound({
         eventId,
-        teamId: draggedItem.team_id,
-        userId: draggedItem.user_id,
+        teamId: participant.team_id,
+        userId: participant.user_id,
         fromRoundId,
         toRoundId: targetRoundId!,
       })
@@ -140,11 +129,14 @@ export default function LiveEventPage() {
         description: error.message || "Failed to move participant",
       })
     } finally {
-      setDraggedItem(null)
+      setMovingParticipant(null)
     }
   }
 
   const handleEliminate = async (participant: any, roundId: string) => {
+    const participantKey = participant.team_id || participant.user_id
+    setMovingParticipant(participantKey)
+
     try {
       const response = await eliminateParticipant({
         eventId,
@@ -166,6 +158,8 @@ export default function LiveEventPage() {
       toast.error("Error", {
         description: error.message || "Failed to eliminate participant",
       })
+    } finally {
+      setMovingParticipant(null)
     }
   }
 
@@ -257,44 +251,110 @@ export default function LiveEventPage() {
     return eventData.progress
       .filter((p: any) => p.round_id === roundId && !p.eliminated)
       .map((p: any) => {
-        const registration = eventData.registrations.find(
-          (reg: any) => reg.team_id === p.team_id || reg.user_id === p.user_id,
-        )
+        const registration = eventData.registrations.find((reg: any) => {
+          // More precise matching logic
+          if (p.team_id && reg.team_id) {
+            return reg.team_id === p.team_id
+          }
+          if (p.user_id && reg.user_id) {
+            return reg.user_id === p.user_id
+          }
+          return false
+        })
+
+        if (!registration) {
+          console.warn("No registration found for progress:", p)
+          return null
+        }
+
         return { ...registration, progress: p }
       })
+      .filter(Boolean) // Remove null entries
   }
 
   const getEliminatedParticipants = () => {
     return eventData.progress
       .filter((p: any) => p.eliminated)
       .map((p: any) => {
-        const registration = eventData.registrations.find(
-          (reg: any) => reg.team_id === p.team_id || reg.user_id === p.user_id,
-        )
+        const registration = eventData.registrations.find((reg: any) => {
+          // More precise matching logic
+          if (p.team_id && reg.team_id) {
+            return reg.team_id === p.team_id
+          }
+          if (p.user_id && reg.user_id) {
+            return reg.user_id === p.user_id
+          }
+          return false
+        })
+
+        if (!registration) {
+          console.warn("No registration found for eliminated participant:", p)
+          return null
+        }
+
         return { ...registration, progress: p }
       })
+      .filter(Boolean) // Remove null entries
   }
 
   const getEventWinners = () => {
-    return eventData.winners.map((winner: any) => {
-      const registration = eventData.registrations.find(
-        (reg: any) => reg.team_id === winner.team_id || reg.user_id === winner.user_id,
-      )
-      return { ...registration, winner }
-    })
+    return eventData.winners
+      .map((winner: any) => {
+        const registration = eventData.registrations.find((reg: any) => {
+          // More precise matching logic
+          if (winner.team_id && reg.team_id) {
+            return reg.team_id === winner.team_id
+          }
+          if (winner.user_id && reg.user_id) {
+            return reg.user_id === winner.user_id
+          }
+          return false
+        })
+
+        if (!registration) {
+          console.warn("No registration found for winner:", winner)
+          return null
+        }
+
+        return { ...registration, winner }
+      })
+      .filter(Boolean) // Remove null entries
   }
 
-  const ParticipantCard = ({ participant, roundId, showEliminate = true }: any) => {
+  const getNextRound = (currentRoundId: string | null) => {
+    if (currentRoundId === null) {
+      return eventData.rounds[0] // First round
+    }
+
+    const currentRoundIndex = eventData.rounds.findIndex((r: any) => r.id === currentRoundId)
+    if (currentRoundIndex < eventData.rounds.length - 1) {
+      return eventData.rounds[currentRoundIndex + 1]
+    }
+
+    return null // No next round (can move to winners)
+  }
+
+  const ParticipantCard = ({ participant, roundId, showEliminate = true, showMoveControls = true }: any) => {
     const isTeam = participant.registration_type === "team"
     const name = isTeam ? participant.teams?.name : participant.profiles?.full_name
+    const participantKey = participant.team_id || participant.user_id
+    const isMoving = movingParticipant === participantKey
+
+    // Find current progress to determine current round
+    const currentProgress = eventData.progress.find(
+      (p: any) =>
+        (p.team_id === participant.team_id && p.user_id === participant.user_id) ||
+        (participant.team_id && p.team_id === participant.team_id) ||
+        (participant.user_id && p.user_id === participant.user_id),
+    )
+
+    const currentRoundId = currentProgress?.round_id || null
+    const nextRound = getNextRound(currentRoundId)
+    const canMoveToWinners = currentRoundId && !nextRound
 
     return (
-      <div
-        draggable
-        onDragStart={(e) => handleDragStart(e, participant)}
-        className="p-3 rounded-lg border border-border bg-muted/20 hover:bg-muted/30 cursor-move transition-colors group"
-      >
-        <div className="flex items-center justify-between">
+      <div className="p-3 rounded-lg border border-border bg-muted/20 hover:bg-muted/30 transition-colors group">
+        <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             {isTeam ? <Users className="h-4 w-4" /> : <User className="h-4 w-4" />}
             <span className="font-medium">{name}</span>
@@ -303,25 +363,67 @@ export default function LiveEventPage() {
                 Eliminated
               </Badge>
             )}
+            {isMoving && (
+              <Badge variant="outline" className="text-xs bg-blue-500/20 text-blue-400">
+                Moving...
+              </Badge>
+            )}
           </div>
-          {showEliminate && !participant.progress?.eliminated && (
-            <Button
-              size="sm"
-              variant="destructive"
-              onClick={() => handleEliminate(participant, roundId)}
-              className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              <X className="h-3 w-3" />
-            </Button>
-          )}
         </div>
+
         {isTeam && participant.teams?.team_members && (
-          <div className="flex flex-wrap gap-1 mt-2">
+          <div className="flex flex-wrap gap-1 mb-2">
             {participant.teams.team_members.map((member: any, index: number) => (
               <Badge key={index} variant="secondary" className="text-xs">
                 {member.profiles?.full_name}
               </Badge>
             ))}
+          </div>
+        )}
+
+        {/* Action Buttons */}
+        {showMoveControls && !participant.progress?.eliminated && !isMoving && (
+          <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            {/* Move to next round */}
+            {nextRound && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handleMoveParticipant(participant, nextRound.id)}
+                className="h-7 px-2 text-xs glow-blue"
+                title={`Move to ${nextRound.title}`}
+              >
+                <ChevronRight className="h-3 w-3 mr-1" />
+                {nextRound.title}
+              </Button>
+            )}
+
+            {/* Move to winners (if in final round) */}
+            {canMoveToWinners && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handleMoveParticipant(participant, "winners")}
+                className="h-7 px-2 text-xs glow-yellow bg-transparent"
+                title="Move to Winners"
+              >
+                <Crown className="h-3 w-3 mr-1" />
+                Winners
+              </Button>
+            )}
+
+            {/* Eliminate */}
+            {showEliminate && roundId && (
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => handleEliminate(participant, roundId)}
+                className="h-7 w-7 p-0"
+                title="Eliminate"
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            )}
           </div>
         )}
       </div>
@@ -337,7 +439,7 @@ export default function LiveEventPage() {
       <div className="text-center py-8">
         <AlertTriangle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
         <h3 className="text-lg font-medium mb-2">Event not found</h3>
-        <Link href="/events">
+        <Link href="/core/events">
           <Button>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Events
@@ -355,7 +457,7 @@ export default function LiveEventPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Link href="/events">
+          <Link href="/core/events">
             <Button variant="outline" size="sm">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Events
@@ -426,9 +528,9 @@ export default function LiveEventPage() {
                           }}
                           className="w-full px-3 py-2 bg-input border border-border rounded-md"
                         >
-                          <option value="">Select winner...</option>
+                          <option value="" className="dark:bg-gray-800 dark:text-white">Select winner...</option>
                           {registrations.map((reg: any) => (
-                            <option key={reg.id} value={reg.team_id || reg.user_id}>
+                            <option key={reg.id} value={reg.team_id || reg.user_id} className="dark:bg-gray-800 dark:text-white">
                               {reg.registration_type === "team" ? reg.teams?.name : reg.profiles?.full_name}
                             </option>
                           ))}
@@ -515,13 +617,15 @@ export default function LiveEventPage() {
               Registered ({getParticipantsInRound(null).length})
             </CardTitle>
           </CardHeader>
-          <CardContent
-            className="space-y-2 min-h-[400px]"
-            onDragOver={handleDragOver}
-            onDrop={(e) => handleDrop(e, null)}
-          >
+          <CardContent className="space-y-2 min-h-[400px]">
             {getParticipantsInRound(null).map((participant: any) => (
-              <ParticipantCard key={participant.id} participant={participant} roundId={null} showEliminate={false} />
+              <ParticipantCard
+                key={participant.id}
+                participant={participant}
+                roundId={null}
+                showEliminate={false}
+                showMoveControls={true}
+              />
             ))}
           </CardContent>
         </Card>
@@ -535,17 +639,14 @@ export default function LiveEventPage() {
                 {round.title} ({getParticipantsInRound(round.id).length})
               </CardTitle>
             </CardHeader>
-            <CardContent
-              className="space-y-2 min-h-[400px]"
-              onDragOver={handleDragOver}
-              onDrop={(e) => handleDrop(e, round.id)}
-            >
+            <CardContent className="space-y-2 min-h-[400px]">
               {getParticipantsInRound(round.id).map((participant: any) => (
                 <ParticipantCard
                   key={participant.id}
                   participant={participant}
                   roundId={round.id}
                   showEliminate={true}
+                  showMoveControls={true}
                 />
               ))}
             </CardContent>
@@ -610,6 +711,7 @@ export default function LiveEventPage() {
                 participant={participant}
                 roundId={participant.progress.round_id}
                 showEliminate={false}
+                showMoveControls={false}
               />
             ))}
           </CardContent>
@@ -625,8 +727,10 @@ export default function LiveEventPage() {
               <div>
                 <h4 className="font-medium text-blue-400 mb-2">How to manage the event:</h4>
                 <ul className="text-sm text-blue-300 space-y-1">
-                  <li>• Drag and drop participants between rounds to advance them</li>
-                  <li>• Click the X button to eliminate participants from their current round</li>
+                  <li>• Hover over participants to see action buttons</li>
+                  <li>• Click the round name button (e.g., "Round 2") to advance participants</li>
+                  <li>• Click "Winners" to move participants from the final round to winners</li>
+                  <li>• Click the X button to eliminate participants</li>
                   <li>• Use "Set Winners" to manually assign 1st, 2nd, and 3rd place</li>
                   <li>• Click "Complete Event" when finished to lock results and calculate points</li>
                 </ul>

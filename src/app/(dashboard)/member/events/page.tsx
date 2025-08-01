@@ -169,10 +169,10 @@ export default function MemberEventsPage() {
             )}
           </div>
           <div className="flex gap-2">
-            <Link href={`/member/events/${event.id}`}>
+            <Link href={`/member/events/${event.id}/result`}>
               <Button variant="outline" size="sm">
                 <Eye className="h-4 w-4 mr-2" />
-                View Details
+                View Results
               </Button>
             </Link>
           </div>

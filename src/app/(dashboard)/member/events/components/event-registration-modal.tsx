@@ -125,6 +125,10 @@ export function EventRegistrationModal({ isOpen, onClose, event, onSuccess }: Ev
         selectedMembers.map((m) => m.id),
       )
 
+      if(!response.success){
+        throw new Error(response.message)
+      }
+
       if (event.is_tournament) {
         toast.success("Tournament Team Created", {
           description: "Your tournament team has been created and registered automatically",

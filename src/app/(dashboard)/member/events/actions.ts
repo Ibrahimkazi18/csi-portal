@@ -1,5 +1,6 @@
 "use server"
 
+import { PostgrestError } from "@supabase/supabase-js"
 import { createClient } from "../../../../../utils/supabase/server"
 import { revalidatePath } from "next/cache"
 
@@ -258,7 +259,7 @@ export async function createTeam(
   eventId: string,
   teamName: string,
   memberIds: string[],
-): Promise<{ teamId: string; message: string }> {
+): Promise<{ teamId?: string; message: string, success: boolean }> {
   const supabase = await createClient()
   const {
     data: { user },
@@ -297,7 +298,16 @@ export async function createTeam(
     .select()
     .single()
 
-  if (teamError) throw new Error("Failed to create team")
+    if (teamError) {
+    // Check for unique violation (duplicate team name for same event)
+    if ((teamError as PostgrestError).code === "23505") {
+      return {
+        success:false, message: "A team with this name already exists for the selected event. Please choose a different name.",
+      }
+    }
+
+    return { success:false, message: "Failed to create team. Please try again." }
+  }
 
   const { error: leaderError } = await supabase.from("team_members").insert({ team_id: team.id, member_id: user.id })
 
@@ -329,7 +339,7 @@ export async function createTeam(
   }
 
   revalidatePath("/member/events")
-  return { teamId: team.id, message: "Team created and invitations sent" }
+  return { success:true, teamId: team.id, message: "Team created and invitations sent" }
 }
 
 // Respond to team invitation

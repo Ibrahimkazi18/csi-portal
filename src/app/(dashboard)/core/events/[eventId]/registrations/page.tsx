@@ -113,7 +113,7 @@ export default function EventRegistrationsPage() {
 
   const totalRegistrations = registrationsData.completeTeams.length + registrationsData.individualRegistrations.length
   const totalIncomplete = registrationsData.incompleteTeams.length
-  const registrationProgress = (totalRegistrations / eventData.max_participants) * 100
+  const registrationProgress = (totalRegistrations / (eventData.max_participants / eventData.team_size)) * 100
 
   return (
     <div className="space-y-6">
@@ -196,7 +196,7 @@ export default function EventRegistrationsPage() {
           <div className="flex justify-between items-center mb-2">
             <span className="text-sm font-medium">Registration Progress</span>
             <span className="text-sm text-muted-foreground">
-              {totalRegistrations} / {eventData.max_participants}
+              {totalRegistrations} / {eventData.max_participants / eventData.team_size}
             </span>
           </div>
           <div className="w-full bg-muted rounded-full h-3">
