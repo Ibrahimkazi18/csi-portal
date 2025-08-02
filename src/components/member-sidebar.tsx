@@ -9,7 +9,8 @@ import {
   MessageSquare,
   Computer,
   LogOut,
-  Megaphone
+  Megaphone,
+  Trophy
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -39,6 +40,11 @@ const sidebarItems = [
     title: 'Leaderboard', 
     icon: BarChart3, 
     path: '/member/leaderboard' 
+  },
+  { 
+    title: 'Tournament', 
+    icon: Trophy, 
+    path: '/member/tournament' 
   },
   { 
     title: 'CSI Guide', 

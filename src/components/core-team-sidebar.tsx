@@ -41,6 +41,11 @@ const sidebarItems = [
     icon: BarChart3,
     path: "/core/leaderboard",
   },
+  { 
+    title: 'Tournament', 
+    icon: Trophy, 
+    path: '/core/tournament' 
+  },
   {
     title: "Queries",
     icon: MessageSquare,

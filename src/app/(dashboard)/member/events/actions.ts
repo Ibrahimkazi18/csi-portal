@@ -318,6 +318,7 @@ export async function createTeam(
     inviter_id: user.id,
     invitee_id: memberId,
     event_id: event.id,
+    tournament_id: null,
     invitation_token: Math.random().toString(36).substring(2),
     status: "pending" as const,                                 // 'pending', 'accepted', 'declined', 'expired'
     message: `You have been invited to participate in ${event.title} from Team ${team.name} by ${profile.full_name}`
