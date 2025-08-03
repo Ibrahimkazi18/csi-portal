@@ -31,25 +31,10 @@ const sidebarItems = [
     icon: Calendar,
     path: "/core/events",
   },
-  {
-    title: "Tournament Teams",
-    icon: Trophy,
-    path: "/core/teams",
-  },
-  {
-    title: "Leaderboard",
-    icon: BarChart3,
-    path: "/core/leaderboard",
-  },
   { 
     title: 'Tournament', 
     icon: Trophy, 
     path: '/core/tournament' 
-  },
-  {
-    title: "Queries",
-    icon: MessageSquare,
-    path: "/core/queries",
   },
   {
     title: "Announcements",

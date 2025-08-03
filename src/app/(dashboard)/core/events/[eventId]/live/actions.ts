@@ -220,10 +220,6 @@ export async function eliminateParticipant({
   return { success: true, message: "Participant eliminated successfully" }
 }
 
-/**
- * Set winners for the event (1st, 2nd, 3rd place)
- * Used when manually setting final positions
- */
 export async function setEventWinners({
   eventId,
   winners,
@@ -284,7 +280,7 @@ export async function completeEvent(eventId: string) {
   // Get event details
   const { data: event, error: eventError } = await supabase
     .from("events")
-    .select("is_tournament, type")
+    .select("id, is_tournament, type, tournament_id")
     .eq("id", eventId)
     .single()
 
@@ -307,7 +303,11 @@ export async function completeEvent(eventId: string) {
 
   // If it's a tournament, calculate and assign points
   if (event.is_tournament) {
-    await calculateTournamentPoints(eventId)
+    const response = await calculateTournamentPoints(event)
+
+    if(!response?.success) {
+      return { sccess: false, message: "Failed to add points" }
+    }
   }
 
   return { success: true, message: "Event completed successfully" }
@@ -317,16 +317,25 @@ export async function completeEvent(eventId: string) {
  * Calculate tournament points based on final positions and rounds reached
  * Internal function called by completeEvent
  */
-async function calculateTournamentPoints(eventId: string) {
+async function calculateTournamentPoints(
+  event: {    
+    id: any;
+    is_tournament: any;
+    type: any;
+    tournament_id: any;
+  }) {
+
   const supabase = await createClient()
 
   // Get winners with their positions
   const { data: winners, error: winnersError } = await supabase
     .from("event_winners")
     .select("position, team_id, user_id")
-    .eq("event_id", eventId)
+    .eq("event_id", event.id)
 
-  if (winnersError) return
+  if (winnersError) return { success : false, message: "Failed to get event winners" };
+
+  const winnerTeamIds = new Set(winners.map(w => w.team_id));
 
   // Get all participants and their highest round reached
   const { data: progress, error: progressError } = await supabase
@@ -336,49 +345,79 @@ async function calculateTournamentPoints(eventId: string) {
       user_id,
       event_rounds(round_number)
     `)
-    .eq("event_id", eventId)
+    .eq("event_id", event.id)
     .eq("eliminated", false)
 
-  if (progressError) return
+  if (progressError) return { success : false, message: "Failed to get event progress" }
 
   // Points system
   const positionPoints = { 1: 100, 2: 75, 3: 50 } // Winner positions
   const roundPoints = { 1: 10, 2: 20, 3: 30, 4: 40 } // Round progression
 
-  const pointsEntries = []
-
-  // Assign points to winners
-  for (const winner of winners || []) {
-    const points = positionPoints[winner.position as keyof typeof positionPoints] || 25
-    pointsEntries.push({
-      event_id: eventId,
-      team_id: winner.team_id,
-      user_id: winner.user_id,
-      points,
-      reason: `Position ${winner.position}`,
-    })
-  }
-
   // Assign points based on rounds reached for non-winners
   for (const participant of progress || []) {
-    const isWinner = winners?.some((w: any) => w.team_id === participant.team_id || w.user_id === participant.user_id)
-    if (!isWinner) {
-      const roundNumber = (participant.event_rounds as any)?.round_number || 1
-      const points = roundPoints[roundNumber as keyof typeof roundPoints] || 5
-      pointsEntries.push({
-        event_id: eventId,
-        team_id: participant.team_id,
-        user_id: participant.user_id,
-        points,
-        reason: `Reached Round ${roundNumber}`,
-      })
+    const teamId = participant.team_id;
+    const roundNumber = (participant as any).event_rounds?.round_number || 1;
+
+    const isWinner = winnerTeamIds.has(teamId);
+    const winnerData = winners.find(w => w.team_id === teamId);
+    const basePoints = isWinner
+      ? positionPoints[winnerData?.position as 1 | 2 | 3] || 25
+      : roundPoints[roundNumber as keyof typeof roundPoints] || 5;
+
+    const updateFields: any = {
+      points: basePoints,
+      matches_played: 1,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (isWinner) {
+      updateFields.wins = 1;
+    } else {
+      updateFields.losses = 1;
+    }
+
+    const { data: existingRow, error: fetchError } = await supabase
+      .from("tournament_points")
+      .select("id, points, matches_played, wins, losses")
+      .eq("team_id", teamId)
+      .eq("tournament_id", event.tournament_id)
+      .maybeSingle();
+
+    if (fetchError) continue;
+
+  
+    if (existingRow) {
+      const { error: updateError } = await supabase
+        .from("tournament_points")
+        .update({
+          points: existingRow.points + updateFields.points,
+          matches_played: (existingRow.matches_played || 0) + 1,
+          wins: (existingRow.wins || 0) + (updateFields.wins || 0),
+          losses: (existingRow.losses || 0) + (updateFields.losses || 0),
+          updated_at: updateFields.updated_at,
+        })
+        .eq("id", existingRow.id);
+
+      if (updateError) console.error("Failed to update tournament points", updateError);
+    } else {
+      const { error: insertError } = await supabase
+        .from("tournament_points")
+        .insert({
+          tournament_id: event.tournament_id,
+          team_id: teamId,
+          points: updateFields.points,
+          matches_played: 1,
+          wins: updateFields.wins || 0,
+          losses: updateFields.losses || 0,
+          updated_at: updateFields.updated_at,
+        });
+
+      if (insertError) console.error("Failed to insert tournament points", insertError);
     }
   }
 
-  // Insert points into tournament_points table
-  if (pointsEntries.length > 0) {
-    await supabase.from("tournament_points").insert(pointsEntries)
-  }
+  return { success: true, message: "Tournament points calculated successfully" };
 }
 
 /**

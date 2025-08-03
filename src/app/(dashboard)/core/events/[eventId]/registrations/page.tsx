@@ -34,6 +34,7 @@ export default function EventRegistrationsPage() {
     incompleteTeams: [],
     individualRegistrations: [],
     pendingInvitations: [],
+    tournamentPending: []
   })
 
   const handleRegistrationsOnLoad = useCallback(async () => {
@@ -226,7 +227,9 @@ export default function EventRegistrationsPage() {
                 >
                   <div className="flex items-center gap-2 mb-2">
                     <CheckCircle className="h-4 w-4 text-green-400" />
-                    <h4 className="font-medium">{registration.profiles?.full_name}</h4>
+                    <h4 className="font-medium">
+                      {registration.profiles?.full_name  }
+                    </h4>
                   </div>
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">
                     <Mail className="h-3 w-3" />
@@ -254,6 +257,7 @@ export default function EventRegistrationsPage() {
             </CardTitle>
             <p className="text-sm text-muted-foreground">Teams with all members confirmed and registered</p>
           </CardHeader>
+
           <CardContent>
             <div className="space-y-4">
               {registrationsData.completeTeams.map((team: any) => (
@@ -264,7 +268,7 @@ export default function EventRegistrationsPage() {
                   <div className="flex items-start justify-between mb-4">
                     <div>
                       <div className="flex items-center gap-2 mb-2">
-                        <h4 className="text-lg font-medium">{team.name}</h4>
+                        <h4 className="text-lg font-medium">{team.teams.name}</h4>
                         <Badge variant="outline" className="bg-green-500/20 text-green-400 border-green-500/30">
                           <CheckCircle className="h-3 w-3 mr-1" />
                           Complete
@@ -279,12 +283,12 @@ export default function EventRegistrationsPage() {
                       <p className="text-sm text-muted-foreground mb-3">{team.description}</p>
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      {team.team_members?.length || 0}/{eventData.team_size} members
+                      {team.teams.team_members?.length || 0}/{eventData.team_size} members
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {team.team_members?.map((member: any, index: number) => (
+                    {team.teams.team_members?.map((member: any, index: number) => (
                       <div
                         key={index}
                         className="flex items-center gap-2 p-3 rounded-lg bg-muted/20 border border-border"
@@ -324,6 +328,143 @@ export default function EventRegistrationsPage() {
           <CardContent>
             <div className="space-y-4">
               {registrationsData.incompleteTeams.map((team: any) => {
+                const currentMembers = team.team_members?.length || 0
+                const completionPercentage = getTeamCompletionPercentage(currentMembers, eventData.team_size)
+
+                return (
+                  <div
+                    key={team.id}
+                    className="p-6 rounded-lg border border-yellow-500/30 bg-yellow-500/5 hover:bg-yellow-500/10 transition-colors"
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <h4 className="text-lg font-medium">{team.name}</h4>
+                          <Badge variant="outline" className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
+                            <AlertTriangle className="h-3 w-3 mr-1" />
+                            Incomplete
+                          </Badge>
+                          {eventData.is_tournament && (
+                            <Badge variant="outline" className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
+                              <Trophy className="h-3 w-3 mr-1" />
+                              Tournament
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-3">{team.description}</p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm text-muted-foreground">
+                          {currentMembers}/{eventData.team_size} members
+                        </div>
+                        <div className="text-xs text-yellow-400">{completionPercentage}% complete</div>
+                      </div>
+                    </div>
+
+                    {/* Progress bar for team completion */}
+                    <div className="w-full bg-muted rounded-full h-2 mb-4">
+                      <div
+                        className="bg-yellow-400 h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${completionPercentage}%` }}
+                      />
+                    </div>
+
+                    {/* Current Members */}
+                    <div className="mb-4">
+                      <h5 className="text-sm font-medium mb-2">Current Members:</h5>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {team.team_members?.map((member: any, index: number) => (
+                          <div
+                            key={index}
+                            className="flex items-center gap-2 p-3 rounded-lg bg-muted/20 border border-border"
+                          >
+                            <UserCheck className="h-4 w-4 text-green-400" />
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium truncate">{member.profiles?.full_name}</p>
+                              <p className="text-xs text-muted-foreground truncate">{member.profiles?.email}</p>
+                            </div>
+                            {member.member_id === team.leader_id && (
+                              <Badge variant="secondary" className="text-xs">
+                                Leader
+                              </Badge>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Pending Invitations */}
+                    {team.pending_invitations && team.pending_invitations.length > 0 && (
+                      <div>
+                        <h5 className="text-sm font-medium mb-2">Pending Invitations:</h5>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {team.pending_invitations.map((invitation: any, index: number) => {
+                            const StatusIcon = getInvitationStatusIcon(invitation.status)
+                            return (
+                              <div
+                                key={index}
+                                className="flex items-center gap-2 p-3 rounded-lg bg-muted/10 border border-dashed border-border"
+                              >
+                                <StatusIcon className={`h-4 w-4 ${getInvitationStatusColor(invitation.status)}`} />
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium truncate">{invitation.invitee_profile?.full_name}</p>
+                                  <p className="text-xs text-muted-foreground truncate">
+                                    {invitation.invitee_profile?.email}
+                                  </p>
+                                </div>
+                                <Badge
+                                  variant="outline"
+                                  className={`text-xs ${
+                                    invitation.status === "pending"
+                                      ? "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
+                                      : invitation.status === "accepted"
+                                        ? "bg-green-500/20 text-green-400 border-green-500/30"
+                                        : "bg-red-500/20 text-red-400 border-red-500/30"
+                                  }`}
+                                >
+                                  {invitation.status}
+                                </Badge>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Missing Members Indicator */}
+                    {currentMembers < eventData.team_size && (
+                      <div className="mt-4 p-3 rounded-lg bg-orange-500/10 border border-orange-500/30">
+                        <div className="flex items-center gap-2">
+                          <UserPlus className="h-4 w-4 text-orange-400" />
+                          <span className="text-sm text-orange-400">
+                            Still needs {eventData.team_size - currentMembers} more member(s)
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Tournament Teams Not Registered */}
+      {eventData.type === "team" && registrationsData.tournamentPending.length > 0 && (
+        <Card className="bg-dark-surface border-border">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-yellow-400" />
+              Tournament Teams Pending ({registrationsData.tournamentPending.length})
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Teams that are registered for tournament but have not registered for the event yet
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {registrationsData.tournamentPending.map((team: any) => {
                 const currentMembers = team.team_members?.length || 0
                 const completionPercentage = getTeamCompletionPercentage(currentMembers, eventData.team_size)
 

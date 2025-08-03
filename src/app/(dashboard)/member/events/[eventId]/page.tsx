@@ -35,6 +35,7 @@ import {
   getMyTeamApplication,
   respondToApplication,
   getYourRegisteredTeam,
+  isUserRegistered,
 } from "../actions"
 import { EventRegistrationModal } from "../components/event-registration-modal"
 import Link from "next/link"
@@ -60,14 +61,15 @@ export default function EventDetailsPage() {
   const handleEventDetailsOnLoad = useCallback(async () => {
     setLoadingData(true)
     try {
-      const [eventResponse, invitationResponse, applicationResponse, teamsResponse, myTeamApplicationResponse, registrationResponse] =
+      const [eventResponse, invitationResponse, applicationResponse, teamsResponse, myTeamApplicationResponse, registrationResponse, isUserResponse] =
         await Promise.all([
             getEventDetails(eventId),
             getTeamInvitations(),
             getTeamApplication(),
             getTeamsNeedingMembers(eventId),
             getMyTeamApplication(eventId),
-            getYourRegisteredTeam(eventId)
+            getYourRegisteredTeam(eventId),
+            isUserRegistered(eventId)
         ]);
 
       if (!eventResponse.success) {
@@ -83,7 +85,7 @@ export default function EventDetailsPage() {
         setApplicationData(applicationResponse.data)
     }
 
-    if(teamsResponse.userInEventTeam) {
+    if(isUserResponse.userRegistered) {
         setUserAlreadyInTeam(true);
     }
 
@@ -524,7 +526,7 @@ export default function EventDetailsPage() {
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5 text-primary" />
                 Registered {event.type === "team" ? "Teams" : "Participants"} ({registrations.length}/
-                {event.max_participants})
+                {event.max_participants / event.team_size})
               </CardTitle>
             </CardHeader>
             <CardContent>

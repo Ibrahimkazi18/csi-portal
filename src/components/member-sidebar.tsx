@@ -32,16 +32,6 @@ const sidebarItems = [
     path: '/member/events' 
   },
   { 
-    title: 'Register Team', 
-    icon: Users, 
-    path: '/member/register-team' 
-  },
-  { 
-    title: 'Leaderboard', 
-    icon: BarChart3, 
-    path: '/member/leaderboard' 
-  },
-  { 
     title: 'Tournament', 
     icon: Trophy, 
     path: '/member/tournament' 
@@ -57,11 +47,6 @@ const sidebarItems = [
     path: "/member/announcements",
     hasNotification: true, // Flag to identify which item can have notifications
   },
-  { 
-    title: 'Ask Query', 
-    icon: MessageSquare, 
-    path: '/member/query' 
-  }
 ];
 
 export default function MemberSidebar() {

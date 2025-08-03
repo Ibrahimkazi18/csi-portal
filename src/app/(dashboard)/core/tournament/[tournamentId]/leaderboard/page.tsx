@@ -8,7 +8,7 @@ import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
 import { useParams } from "next/navigation"
 import Link from "next/link"
-import { getTournamentLeaderboard, getTournamentDetails } from "../../actions"
+import { getTournamentLeaderboard, getTournamentDetails, getTotalEvents } from "../../actions"
 
 export default function TournamentLeaderboardPage() {
   const params = useParams()
@@ -16,13 +16,15 @@ export default function TournamentLeaderboardPage() {
   const [loading, setLoading] = useState(true)
   const [leaderboard, setLeaderboard] = useState<any[]>([])
   const [tournament, setTournament] = useState<any>(null)
+  const [totalEvents, setTotalEvents] = useState<any>(null)
 
   const loadData = useCallback(async () => {
     setLoading(true)
     try {
-      const [leaderboardResponse, tournamentResponse] = await Promise.all([
+      const [leaderboardResponse, tournamentResponse, totalEventsResponse] = await Promise.all([
         getTournamentLeaderboard(tournamentId),
         getTournamentDetails(tournamentId),
+        getTotalEvents(tournamentId)
       ])
 
       if (!leaderboardResponse.success) {
@@ -34,6 +36,10 @@ export default function TournamentLeaderboardPage() {
 
       if (tournamentResponse.data) {
         setTournament(tournamentResponse.data.tournament)
+      }
+
+      if(totalEventsResponse.data) {
+        setTotalEvents(totalEventsResponse.data);
       }
 
     } catch (error: any) {
@@ -268,9 +274,9 @@ export default function TournamentLeaderboardPage() {
               <div className="flex items-center gap-3">
                 <Target className="h-8 w-8 text-green-400" />
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Matches</p>
+                  <p className="text-sm text-muted-foreground">Total Events</p>
                   <p className="text-2xl font-bold">
-                    {leaderboard.reduce((acc, team) => acc + team.matches_played, 0)}
+                    {totalEvents || 0}
                   </p>
                 </div>
               </div>

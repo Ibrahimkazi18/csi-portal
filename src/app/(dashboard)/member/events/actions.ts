@@ -19,59 +19,50 @@ export async function getEventRounds(event_id: string) {
 
 export async function getAllEvents() {
   const supabase = await createClient()
+
   const {
     data: { user },
     error: userError,
   } = await supabase.auth.getUser()
+
   if (userError || !user) return { success: false, message: "User not authenticated" }
 
-  const { data: profile, error: profileError } = await supabase.from("profiles").select("id").eq("id", user.id).single()
-
-  if (profileError || !profile) return { success: false, message: "Profile Not Found" }
-
-  const { data: teams, error: teamsError } = await supabase
+  // Step 1: Get all tournament team memberships
+  const { data: tournamentTeams } = await supabase
     .from("team_members")
-    .select("team_id, teams!inner(is_tournament)")
+    .select("team_id, teams!inner(is_tournament, tournament_id)")
     .eq("member_id", user.id)
 
-  if (teamsError) return { success: false, message: "Failed To Fetch Team" }
+  const tournamentIds = tournamentTeams
+    ?.filter((tm: any) => tm.teams?.is_tournament && tm.teams?.tournament_id)
+    .map((tm: any) => tm.teams?.tournament_id) ?? []
 
-  // Safely handle the teams data structure
-  const teamIds =
-    teams
-      ?.filter((t) => {
-        // Handle both array and object structures
-        const teamData = Array.isArray(t.teams) ? t.teams[0] : t.teams
-        return teamData?.is_tournament === true
-      })
-      .map((t) => t.team_id) || []
-
-  // Build base query
+  // Step 2: Get all events
   let baseQuery = supabase
     .from("events")
     .select(
-      "id, title, description, banner_url, max_participants, team_size, registration_deadline, start_date, end_date, type, is_tournament, category, status, created_at",
+      "id, title, description, banner_url, max_participants, team_size, registration_deadline, start_date, end_date, type, is_tournament, category, status, created_at"
     )
-    .order("start_date", { ascending: true });
+    .order("start_date", { ascending: true })
 
-  // Apply tournament filtering
-  if (teamIds.length > 0) {
-    baseQuery = baseQuery.or(`is_tournament.eq.false, and(is_tournament.eq.true, id.in.(${teamIds.join(",")}))`)
+  if (tournamentIds.length > 0) {
+    baseQuery = baseQuery.or(`is_tournament.eq.false, tournament_id.in.(${tournamentIds.join(",")})`)
   } else {
     baseQuery = baseQuery.eq("is_tournament", false)
   }
 
-  const { data: allEvents, error } = await baseQuery
+  const { data: allEvents, error: eventsError } = await baseQuery
 
-  if (error) return { success: false, message: "Failed to fetch events" }
+  if (eventsError) return { success: false, message: "Failed to fetch events" }
 
-  // Categorize events
   const now = new Date()
+
   const registrationOpen = allEvents?.filter(
     (event) => event.status === "registration_open" && new Date(event.registration_deadline) >= now,
   )
   const upcoming = allEvents?.filter((event) => event.status === "upcoming")
   const completed = allEvents?.filter((event) => event.status === "completed")
+  const ongoing = allEvents?.filter((event) => event.status === "ongoing")
 
   return {
     success: true,
@@ -79,9 +70,12 @@ export async function getAllEvents() {
       registrationOpen: registrationOpen || [],
       upcoming: upcoming || [],
       completed: completed || [],
+      ongoing: ongoing || [],
     },
   }
 }
+
+
 // Get single event details
 export async function getEventDetails(eventId: string) {
   const supabase = await createClient()
@@ -620,6 +614,82 @@ export async function getTeamsNeedingMembers(eventId: string) {
   return { success: true, data: teamsNeedingMembers || [] };
 }
 
+export async function isUserRegistered(eventId : string) {
+  const supabase = await createClient();
+
+  // Get current user
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) return { success: false, message: "User not authenticated" };
+
+  
+  // Get event details 
+  const { data: event, error: eventError } = await supabase
+    .from("events")
+    .select("*")
+    .eq("id", eventId)
+    .single();
+
+  if (eventError || !event) return { success: false, message: "Event not found" };
+
+  const { data: userTeams, error: userTeamError } = await supabase
+    .from("team_members")
+    .select("*")
+    .eq("member_id", user.id)
+  
+  if(userTeamError) {
+    return  { success : false, message: 'Failed getting user teams'}
+  }
+
+  const userTeamIds = userTeams
+    .map((team) => team.team_id);
+
+  // Get all teams for this event
+  if(event.is_tournament) {
+    const { data: eventTeams, error: eventTeamError } = await supabase
+      .from("event_registrations")
+      .select("*")
+      .eq("event_id", event.id)
+    
+    if(eventTeamError) {
+      return  { success : false, message: 'Failed getting event registrations'}
+    }
+    
+    const userTeamRegistered = eventTeams?.some((team) => userTeamIds.includes(team.team_id)) || false; 
+
+    if(userTeamRegistered) return { success : true, userRegistered: true}
+
+    if(!userTeamRegistered) return { success : true, userRegistered: false}
+  }
+
+  const { data: teams, error: teamError } = await supabase
+    .from("teams")
+    .select(`
+      id,
+      name,
+      leader_id,
+      description,
+      event_id,
+      team_members(
+        member_id,
+        profiles(full_name, email)
+      ),
+      profiles:profiles!leader_id(full_name, email)
+    `)
+    .eq("event_id", eventId);
+
+  if (teamError) return { success: false, message: "Failed to fetch teams" };
+
+  const userTeamRegistered = teams?.some((team) => userTeamIds.includes(team.id)) || false; 
+
+  if(userTeamRegistered) return { success : true, userRegistered: true}
+
+  return { success : true, userRegistered: false}
+}
+
 
 // Apply to join a pending team
 export async function applyToTeam(teamId: string, eventId: string): Promise<{ message: string }> {
@@ -803,6 +873,7 @@ export async function registerForIndividualEvent(eventId: string): Promise<{ mes
 export async function getYourRegisteredTeam(eventId: string) {
   const supabase = await createClient();
 
+  // 1. Get the authenticated user
   const {
     data: { user },
     error: userError,
@@ -812,46 +883,195 @@ export async function getYourRegisteredTeam(eventId: string) {
     return { success: false, error: "User not authenticated" };
   }
 
-  // First, get the team_id for the current user
-  const { data: teamMember, error: teamMemberError } = await supabase
-    .from('team_members')
-    .select('team_id')
-    .eq('member_id', user.id)
+  // 2. Fetch the event to check if it's a tournament
+  const { data: event, error: eventError } = await supabase
+    .from("events")
+    .select("id, is_tournament, tournament_id")
+    .eq("id", eventId)
     .single();
 
-  if (teamMemberError || !teamMember) {
-    return { success: false, error: "Team not found for user" };
+  if (eventError || !event) {
+    return { success: false, error: "Event not found" };
   }
 
-  // Now fetch the registration with nested team and member data
+  let teamId: string | null = null;
+
+  if (event.is_tournament && event.tournament_id) {
+    // 3A. Tournament event: find user's team in that tournament
+    const { data: tournamentTeam, error: tournamentTeamError } = await supabase
+      .from("team_members")
+      .select("team_id, teams(tournament_id, is_tournament)")
+      .eq("member_id", user.id)
+      .eq("teams.tournament_id", event.tournament_id)
+      .eq("teams.is_tournament", true)
+
+    if (tournamentTeamError || !tournamentTeam) {
+      return { success: false, error: "Tournament team not found" };
+    }
+
+    const teams = tournamentTeam.find((team:any) => team.teams?.is_tournament && team.teams?.tournament_id === event.tournament_id)
+
+    if(!teams) {
+      return { success: false }
+    }
+
+    teamId = teams.team_id;
+
+  } else {
+    // 3B. Regular event: find user's team for that event
+    const { data: eventTeam, error: eventTeamError } = await supabase
+      .from("team_members")
+      .select("team_id, teams(event_id)")
+      .eq("member_id", user.id)
+      .eq("teams.event_id", event.id)
+      .eq("teams.is_tournament", false)
+
+    if (eventTeamError || !eventTeam) {
+      return { success: false, error: "Event team not found" };
+    }
+
+    const teams = eventTeam.find((team:any) => !team.teams?.is_tournament && team.teams?.event_id === event.id)
+
+    if(!teams) {
+      return { success: false }
+    }
+
+    teamId = teams.team_id;
+  }
+
+  if (!teamId) {
+    return { success: false, error: "Team ID not found" };
+  }
+
+  // 4. Fetch the registration using the teamId
   const { data: registration, error: registrationError } = await supabase
-  .from("event_registrations")
-  .select(
-    `
-    id,
-    registration_type,
-    status,
-    user_id,
-    team_id,
-    teams(
+    .from("event_registrations")
+    .select(
+      `
       id,
-      name,
-      leader_id,
-      team_members(
-        member_id,
-        profiles(full_name, email)
-      )
-    ),
-    profiles(full_name, email)
-  `,
-  )
-  .eq("event_id", eventId)
-  .eq("team_id", teamMember.team_id)
-  .single()
+      registration_type,
+      status,
+      user_id,
+      team_id,
+      teams(
+        id,
+        name,
+        leader_id,
+        team_members(
+          member_id,
+          profiles(full_name, email)
+        )
+      ),
+      profiles(full_name, email)
+    `
+    )
+    .eq("event_id", eventId)
+    .eq("team_id", teamId)
+    .maybeSingle();
 
   if (registrationError || !registration) {
     return { success: false, error: "Registration not found" };
   }
 
   return { success: true, registration };
+}
+
+// Get user's existing tournament team
+export async function getUserTournamentTeam() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
+  if (userError || !user) return { success: false, message: "User not authenticated" }
+
+  // Get user's tournament team (where they are a member)
+  const { data: teamMember, error: memberError } = await supabase
+    .from("team_members")
+    .select(`
+      team_id,
+      teams!inner(
+        id,
+        name,
+        is_tournament,
+        team_members(
+          member_id,
+          profiles(full_name, email)
+        )
+      )
+    `)
+    .eq("member_id", user.id)
+    .eq("teams.is_tournament", true)
+    .single()
+
+  if (memberError || !teamMember) {
+    return { success: false, message: "No tournament team found" }
+  }
+
+  return {
+    success: true,
+    data: {
+      id: (teamMember as any).teams.id,
+      name: (teamMember as any).teams.name,
+      team_members: (teamMember as any).teams.team_members,
+    },
+  }
+}
+
+// Register existing tournament team for an event
+export async function registerExistingTournamentTeam(
+  eventId: string,
+  teamId: string,
+): Promise<{ success: boolean; message: string }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
+  if (userError || !user) return { success: false, message: "User not authenticated" }
+
+  // Verify the event is a tournament
+  const { data: event, error: eventError } = await supabase
+    .from("events")
+    .select("is_tournament, registration_deadline")
+    .eq("id", eventId)
+    .single()
+
+  if (eventError || !event) return { success: false, message: "Event not found" }
+  if (!event.is_tournament) return { success: false, message: "Event is not a tournament event" }
+  if (new Date(event.registration_deadline) < new Date())
+    return { success: false, message: "Registration deadline passed" }
+
+  // Verify user is part of the team
+  const { data: teamMember, error: memberError } = await supabase
+    .from("team_members")
+    .select("team_id")
+    .eq("team_id", teamId)
+    .eq("member_id", user.id)
+    .single()
+
+  if (memberError || !teamMember) return { success: false, message: "You are not a member of this team" }
+
+  // Check if team is already registered for this event
+  const { data: existingReg, error: regCheckError } = await supabase
+    .from("event_registrations")
+    .select("id")
+    .eq("event_id", eventId)
+    .eq("team_id", teamId)
+    .single()
+
+  if (existingReg) return { success: false, message: "Team is already registered for this event" }
+
+  // Register the team for the event
+  const { error: regError } = await supabase.from("event_registrations").insert({
+    event_id: eventId,
+    team_id: teamId,
+    registration_type: "team",
+    status: "registered",
+  })
+
+  if (regError) return { success: false, message: "Failed to register team for event" }
+
+  revalidatePath("/member/events")
+  return { success: true, message: "Tournament team registered successfully" }
 }

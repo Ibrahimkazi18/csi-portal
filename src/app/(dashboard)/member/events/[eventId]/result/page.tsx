@@ -117,7 +117,7 @@ export default function EventResultsPage() {
         <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
         <h3 className="text-lg font-medium mb-2">Event not found</h3>
         <p className="text-muted-foreground mb-4">The event you're looking for doesn't exist or has been removed.</p>
-        <Link href="/core/events">
+        <Link href="/member/events">
           <Button>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Events
@@ -134,7 +134,7 @@ export default function EventResultsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Link href="/core/events">
+        <Link href="/member/events">
           <Button variant="outline" size="sm">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Events

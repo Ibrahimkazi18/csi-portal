@@ -145,19 +145,39 @@ export async function getEventRounds(event_id: string) {
 }
 
 export async function addEventRounds(
-    eventId: string, 
+  eventId: string, 
     rounds: { 
         title: string; 
         description: string; 
-        round_number: number }[]
-    ) 
-{
-
+        round_number: number 
+    }[]
+) {
+  console.log('rounds: ', rounds);
   const supabase = await createClient();
 
-  const payload = rounds.map(r => ({
-    ...r,
-    event_id: eventId
+  // Fetch existing rounds to check for duplicates
+  const { data: existingRounds, error: fetchError } = await supabase
+    .from('event_rounds')
+    .select('round_number')
+    .eq('event_id', eventId);
+
+  if (fetchError) {
+    console.log('fetch error: ', fetchError);
+    throw new Error(fetchError.message);
+  }
+
+  const existingRoundNumbers = existingRounds.map(r => r.round_number);
+  const newRounds = rounds.filter(r => !existingRoundNumbers.includes(r.round_number));
+
+  if (newRounds.length === 0) {
+    throw new Error('No new rounds to add');
+  }
+
+  const payload = newRounds.map(r => ({
+    event_id: eventId,
+    title: r.title,
+    description: r.description,
+    round_number: r.round_number,
   }));
 
   const { data, error } = await supabase
@@ -165,6 +185,7 @@ export async function addEventRounds(
     .insert(payload)
     .select();
 
+  console.log('insert error: ', error);
   if (error) throw error;
   return data;
 }
@@ -315,6 +336,42 @@ export async function getEventRegistrations(eventId: string) {
     return { success: false, error: "Failed to fetch registrations" }
   }
 
+  if(event.is_tournament) {
+    const { data : tournamentTeams, error: tournamentError } = await supabase
+      .from("teams")
+      .select(`*, 
+        team_members(
+          member_id,
+          profiles(full_name, email)
+        )
+      `)
+      .eq("is_tournament", true)
+      .eq("tournament_id", event.tournament_id)
+
+    if(tournamentError) {
+      return { success: false, message: "Error fetching tournament teams" }
+    }
+
+    const registeredTeamIds = new Set(registrations.map((reg) => reg.team_id));
+    const pendingTeams = tournamentTeams.filter((team) => !registeredTeamIds.has(team.id));
+
+    console.log(pendingTeams)
+
+    return {
+      success: true,
+      data : {
+        event,
+          registrations: {
+            completeTeams: registrations,
+            incompleteTeams: [],
+            pendingInvitations: [],
+            individualRegistrations: [],
+            tournamentPending: pendingTeams
+          },
+      }
+    }
+  }
+
   // Get incomplete teams (teams with pending invitations)
   const { data: incompleteTeams, error: incompleteError } = await supabase
     .from("teams")
@@ -322,11 +379,19 @@ export async function getEventRegistrations(eventId: string) {
       id,
       name,
       leader_id,
+      status,
+      user_id,
       description,
-      team_members(
-        member_id,
-        profiles(full_name, email)
+      teams(
+        id,
+        name,
+        leader_id,
+        team_members(
+          member_id,
+          profiles(full_name, email)
+        )
       ),
+      profiles(full_name, email),
       team_invitations(
         id,
         status,
@@ -350,7 +415,7 @@ export async function getEventRegistrations(eventId: string) {
   const filteredIncompleteTeams =
     incompleteTeams
       ?.filter((team) => {
-        const currentMembers = team.team_members?.length || 0
+        const currentMembers = (team as any).teams.team_members?.length || 0
         const hasPendingInvitations = team.team_invitations?.some((inv) => inv.status === "pending")
         return currentMembers < event.team_size || hasPendingInvitations
       })
@@ -382,6 +447,7 @@ export async function getEventRegistrations(eventId: string) {
         incompleteTeams: filteredIncompleteTeams,
         individualRegistrations,
         pendingInvitations: [],
+        tournamentPending: []
       },
     },
   }

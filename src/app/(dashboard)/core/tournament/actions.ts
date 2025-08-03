@@ -411,3 +411,16 @@ export async function getTournamentLeaderboard(tournamentId: string) {
 
   return { success: true, data: data || [] }
 }
+
+export async function getTotalEvents(tournamentId: string) {
+  const supabase = await createClient();
+
+  const { count: data, error } = await supabase
+    .from("events")
+    .select("*", { count: "exact", head: true })
+    .eq("tournament_id", tournamentId)
+
+  if (error) return { success: false, message: "Failed to fetch leaderboard" }
+
+  return { success: true, data: data || 0 }
+}

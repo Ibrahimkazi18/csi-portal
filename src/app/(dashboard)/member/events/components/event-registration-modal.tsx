@@ -14,8 +14,14 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { toast } from "sonner"
-import { Users, User, Trophy, X, Calendar, Clock } from "lucide-react"
-import { getAvailableMembers, createTeam, registerForIndividualEvent } from "../actions"
+import { Users, User, Trophy, X, Calendar, Clock, CheckCircle } from "lucide-react"
+import {
+  getAvailableMembers,
+  createTeam,
+  registerForIndividualEvent,
+  getUserTournamentTeam,
+  registerExistingTournamentTeam,
+} from "../actions"
 
 interface EventRegistrationModalProps {
   isOpen: boolean
@@ -30,18 +36,60 @@ interface SelectedMember {
   email: string
 }
 
+interface TournamentTeam {
+  id: string
+  name: string
+  team_members: Array<{
+    member_id: string
+    profiles: {
+      full_name: string
+      email: string
+    }
+  }>
+}
+
 export function EventRegistrationModal({ isOpen, onClose, event, onSuccess }: EventRegistrationModalProps) {
   const [loading, setLoading] = useState(false)
   const [availableMembers, setAvailableMembers] = useState<any[]>([])
   const [selectedMembers, setSelectedMembers] = useState<SelectedMember[]>([])
   const [teamName, setTeamName] = useState("")
   const [searchTerm, setSearchTerm] = useState("")
+  const [existingTournamentTeam, setExistingTournamentTeam] = useState<TournamentTeam | null>(null)
+  const [loadingTeam, setLoadingTeam] = useState(false)
 
   useEffect(() => {
     if (event && event.type === "team" && isOpen) {
-      loadAvailableMembers()
+      if (event.is_tournament) {
+        loadExistingTournamentTeam()
+      } else {
+        loadAvailableMembers()
+      }
     }
   }, [event, isOpen])
+
+  const loadExistingTournamentTeam = async () => {
+    if (!event) return
+
+    setLoadingTeam(true)
+    try {
+      const response = await getUserTournamentTeam()
+      if (response.success && response.data) {
+        setExistingTournamentTeam(response.data)
+        setTeamName(response.data.name)
+      } else {
+        // No existing team, load available members for team creation
+        loadAvailableMembers()
+      }
+    } catch (error: any) {
+      toast.error("Error", {
+        description: error.message || "Failed to load tournament team",
+      })
+      // Fallback to normal team creation
+      loadAvailableMembers()
+    } finally {
+      setLoadingTeam(false)
+    }
+  }
 
   const loadAvailableMembers = async () => {
     if (!event) return
@@ -102,6 +150,30 @@ export function EventRegistrationModal({ isOpen, onClose, event, onSuccess }: Ev
     }
   }
 
+  const handleExistingTournamentTeamRegistration = async () => {
+    if (!event || !existingTournamentTeam) return
+
+    setLoading(true)
+    try {
+      const response = await registerExistingTournamentTeam(event.id, existingTournamentTeam.id)
+      if (!response.success) {
+        throw new Error(response.message)
+      }
+
+      toast.success("Registration Successful", {
+        description: "Your tournament team has been registered for this event!",
+      })
+      onSuccess()
+      onClose()
+    } catch (error: any) {
+      toast.error("Registration Failed", {
+        description: error.message || "Failed to register tournament team",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleTeamRegistration = async () => {
     if (!event || !teamName.trim()) {
       toast.error("Missing Information", {
@@ -125,7 +197,7 @@ export function EventRegistrationModal({ isOpen, onClose, event, onSuccess }: Ev
         selectedMembers.map((m) => m.id),
       )
 
-      if(!response.success){
+      if (!response.success) {
         throw new Error(response.message)
       }
 
@@ -172,9 +244,11 @@ export function EventRegistrationModal({ isOpen, onClose, event, onSuccess }: Ev
           <DialogDescription>
             {event.type === "individual"
               ? "Confirm your individual registration for this event"
-              : event.is_tournament
-                ? "Create your tournament team (automatic registration)"
-                : "Create your team and invite members (they must accept to complete registration)"}
+              : event.is_tournament && existingTournamentTeam
+                ? "Register your existing tournament team for this event"
+                : event.is_tournament
+                  ? "Create your tournament team (automatic registration)"
+                  : "Create your team and invite members (they must accept to complete registration)"}
           </DialogDescription>
         </DialogHeader>
 
@@ -222,8 +296,47 @@ export function EventRegistrationModal({ isOpen, onClose, event, onSuccess }: Ev
           </div>
         )}
 
-        {/* Team Registration */}
-        {event.type === "team" && (
+        {/* Existing Tournament Team Registration */}
+        {event.type === "team" && event.is_tournament && existingTournamentTeam && !loadingTeam && (
+          <div className="space-y-4">
+            <div className="p-4 rounded-lg border border-green-500/30 bg-green-500/10">
+              <div className="flex items-center gap-2 mb-3">
+                <CheckCircle className="h-5 w-5 text-green-400" />
+                <h4 className="font-medium text-green-400">Existing Tournament Team Found</h4>
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <Label className="text-sm font-medium">Team Name</Label>
+                  <p className="text-sm text-muted-foreground">{existingTournamentTeam.name}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">
+                    Team Members ({existingTournamentTeam.team_members.length})
+                  </Label>
+                  <div className="space-y-2 mt-2">
+                    {existingTournamentTeam.team_members.map((member) => (
+                      <div key={member.member_id} className="flex items-center gap-2 p-2 rounded-lg bg-muted/20">
+                        <div>
+                          <div className="font-medium text-sm">{member.profiles.full_name}</div>
+                          <div className="text-xs text-muted-foreground">{member.profiles.email}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="p-4 rounded-lg border border-blue-500/30 bg-blue-500/10">
+              <p className="text-sm text-blue-400">
+                <Trophy className="h-4 w-4 inline mr-1" />
+                Your existing tournament team will be registered for this event automatically.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Team Registration (New Team or Non-Tournament) */}
+        {event.type === "team" && (!event.is_tournament || !existingTournamentTeam) && !loadingTeam && (
           <div className="space-y-4">
             {/* Team Name */}
             <div className="space-y-2">
@@ -321,16 +434,46 @@ export function EventRegistrationModal({ isOpen, onClose, event, onSuccess }: Ev
           </div>
         )}
 
+        {/* Loading State */}
+        {loadingTeam && (
+          <div className="flex items-center justify-center p-8">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
+              <p className="text-sm text-muted-foreground">Loading tournament team...</p>
+            </div>
+          </div>
+        )}
+
         <DialogFooter>
           <Button type="button" variant="outline" onClick={onClose}>
             Cancel
           </Button>
           <Button
-            onClick={event.type === "individual" ? handleIndividualRegistration : handleTeamRegistration}
-            disabled={loading || (event.type === "team" && (!teamName.trim() || selectedMembers.length === 0))}
+            onClick={
+              event.type === "individual"
+                ? handleIndividualRegistration
+                : event.is_tournament && existingTournamentTeam
+                  ? handleExistingTournamentTeamRegistration
+                  : handleTeamRegistration
+            }
+            disabled={
+              loading ||
+              loadingTeam ||
+              (event.type === "team" && !event.is_tournament && (!teamName.trim() || selectedMembers.length === 0)) ||
+              (event.type === "team" &&
+                event.is_tournament &&
+                !existingTournamentTeam &&
+                (!teamName.trim() || selectedMembers.length === 0))
+            }
             className="glow-blue"
           >
-            {loading ? "Processing..." : event.type === "individual" ? "Register" : "Create Team"}
+            {loading
+              ? "Processing..."
+              : event.type === "individual"
+                ? "Register"
+                : event.is_tournament && existingTournamentTeam
+                  ? "Register Team"
+                  : "Create Team"}
           </Button>
         </DialogFooter>
       </DialogContent>

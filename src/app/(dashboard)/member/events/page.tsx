@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Calendar, Users, User, Trophy, Clock, MapPin, AlertCircle, Bell, UserPlus, Eye } from "lucide-react"
+import { Calendar, Users, User, Trophy, Clock, MapPin, AlertCircle, Bell, UserPlus, Eye, Disc } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
 import { getAllEvents } from "./actions"
@@ -19,6 +19,7 @@ export default function MemberEventsPage() {
     registrationOpen: [],
     upcoming: [],
     completed: [],
+    ongoing: [],
   })
   const [showInvitations, setShowInvitations] = useState(false)
   const [showPendingTeams, setShowPendingTeams] = useState(false)
@@ -131,6 +132,7 @@ export default function MemberEventsPage() {
               </span>
             </div>
           </div>
+
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4 text-muted-foreground" />
             <div>
@@ -142,6 +144,7 @@ export default function MemberEventsPage() {
               </span>
             </div>
           </div>
+
           <div>
             <span className="text-muted-foreground">Max Participants: </span>
             <span className="font-medium">{event.max_participants}</span>
@@ -168,14 +171,39 @@ export default function MemberEventsPage() {
               </span>
             )}
           </div>
-          <div className="flex gap-2">
-            <Link href={`/member/events/${event.id}/result`}>
-              <Button variant="outline" size="sm">
-                <Eye className="h-4 w-4 mr-2" />
-                View Results
-              </Button>
-            </Link>
-          </div>
+
+          {event.status === "upcoming" || event.status === "registration_open" &&
+            <div className="flex gap-2">
+              <Link href={`/member/events/${event.id}`}>
+                <Button variant="outline" size="sm">
+                  <Eye className="h-4 w-4 mr-2" />
+                  View Details
+                </Button>
+              </Link>
+            </div>
+          }
+
+          {event.status === "ongoing" && 
+            <div className="flex gap-2">
+              <Link href={`/member/events/${event.id}/live`}>
+                <Button variant="outline" size="sm">
+                  <Eye className="h-4 w-4 mr-2" />
+                  Live
+                </Button>
+              </Link>
+            </div>
+          }
+
+          {event.status === "completed" && 
+            <div className="flex gap-2">
+              <Link href={`/member/events/${event.id}/result`}>
+                <Button variant="outline" size="sm">
+                  <Eye className="h-4 w-4 mr-2" />
+                  View Results
+                </Button>
+              </Link>
+            </div>
+          }
         </div>
       </div>
     )
@@ -277,6 +305,27 @@ export default function MemberEventsPage() {
               </CardContent>
             </Card>
           )}
+
+          {/* Live Events */}
+          {eventsData.ongoing.length > 0 && (
+            <Card className="bg-dark-surface border-border">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Disc className="h-5 w-5 text-red-400" />
+                  Live Events
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">Live events with their results</p>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {eventsData.ongoing.map((event: any) => (
+                    <EventCard key={event.id} event={event} />
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
 
           {/* Completed Events */}
           {eventsData.completed.length > 0 && (
