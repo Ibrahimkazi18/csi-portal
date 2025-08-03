@@ -396,3 +396,18 @@ export async function resetTournament(tournamentId: string) {
 
   return { success: true, message: "Tournament reset successfully" }
 }
+
+// Get tournament leaderboard
+export async function getTournamentLeaderboard(tournamentId: string) {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from("tournament_leaderboard")
+    .select("*")
+    .eq("tournament_id", tournamentId)
+    .order("points", { ascending: false })
+
+  if (error) return { success: false, message: "Failed to fetch leaderboard" }
+
+  return { success: true, data: data || [] }
+}

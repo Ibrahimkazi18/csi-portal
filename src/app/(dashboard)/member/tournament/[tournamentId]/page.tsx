@@ -19,7 +19,7 @@ import {
 } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import {
   getTournamentDetails,
@@ -44,6 +44,8 @@ export default function TournamentDetailsPage() {
   const [applyingToTeam, setApplyingToTeam] = useState<string | null>(null)
   const [processingApplication, setProcessingApplication] = useState<string | null>(null)
 
+  const router = useRouter();
+
   const loadData = useCallback(async () => {
     setLoading(true)
     try {
@@ -65,7 +67,6 @@ export default function TournamentDetailsPage() {
       }
 
       if (teamsResponse.data) {
-        console.log(teamsResponse.data);
         setTeamsNeedingMembers(teamsResponse.data)
       } else if (teamsResponse.userInTournamentTeam) {
         setUserInTournamentTeam(true)
@@ -210,6 +211,12 @@ export default function TournamentDetailsPage() {
           <Button onClick={() => setIsCreateTeamModalOpen(true)} className="glow-blue">
             <UserPlus className="h-4 w-4 mr-2" />
             Create Team
+          </Button>
+        )}
+        {tournament.status === "ongoing" && (
+          <Button onClick={() => router.push(`/member/tournament/${tournamentId}/leaderboard`)} className="glow-blue">
+            <Award className="h-4 w-4 mr-2" />
+            Leaderboard
           </Button>
         )}
       </div>
@@ -386,7 +393,7 @@ export default function TournamentDetailsPage() {
       )}
 
       {/* Leaderboard */}
-      {(tournament.status === "ongoing" || tournament.status === "completed") && leaderboard.length > 0 && (
+      {(tournament.status === "ongoing" || tournament.status === "completed") && leaderboard?.length > 0 && (
         <Card className="bg-dark-surface border-border">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

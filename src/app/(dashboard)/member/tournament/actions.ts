@@ -214,9 +214,9 @@ export async function respondToTournamentInvitation(
             console.log(pointsError)
             if (pointsError) throw new Error("Failed to initialize tournament points")
         }
-        }
+      }
 
-    }
+  }
 
   return { message: `Invitation ${status}` }
 }
@@ -481,9 +481,58 @@ export async function respondToTournamentApplication(
   if (accept) {
     const { error: memberError } = await supabase
       .from("team_members")
-      .insert({ team_id: application.team_id, member_id: application.user_id })
+      .insert({ team_id: application.team_id, member_id: user.id })
 
-    if (memberError) throw new Error("Failed to add member to team")
+    if (memberError) throw new Error("Failed to add member to team");
+
+    const team = application.teams as unknown as { event_id: string; is_tournament: boolean };
+
+    // Count team members
+    const { count: memberCount, error: countError } = await supabase
+      .from("team_members")
+      .select("*", { count: "exact", head: true })
+      .eq("team_id", application.team_id);
+
+    if (countError) throw new Error("Failed to count team members");
+
+    if (team.is_tournament && memberCount === 4) {
+        const { data: existingRegistration, error: regCheckError } = await supabase
+        .from("tournament_registrations")
+        .select("id")
+        .eq("team_id", application.team_id)
+        .single();
+
+        console.log(regCheckError)
+        if (regCheckError && regCheckError.code !== "PGRST116") {
+            throw new Error("Failed to check existing registration");
+        }
+
+        if (!existingRegistration) {
+            const { error: regError } = await supabase.from("tournament_registrations").insert({
+              tournament_id: application.tournament_id,
+              team_id: application.team_id,
+              status: "registered",
+            });
+
+            console.log(regError)
+            if (regError) throw new Error("Failed to register team");
+
+            // Initialize tournament points for the team
+            const { error: pointsError } = await supabase.from("tournament_points").insert({
+                tournament_id: application.tournament_id,
+                team_id: application.team_id,
+                points: 0,
+                matches_played: 0,
+                wins: 0,
+                losses: 0,
+                draws: 0,
+            })
+            
+            console.log(pointsError)
+            if (pointsError) throw new Error("Failed to initialize tournament points")
+        }
+      }
+
   }
 
   return { message: `Application ${status}` }
