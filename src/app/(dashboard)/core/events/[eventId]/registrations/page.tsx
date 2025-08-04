@@ -102,7 +102,7 @@ export default function EventRegistrationsPage() {
     return (
       <div className="text-center py-8">
         <h3 className="text-lg font-medium mb-2">Event not found</h3>
-        <Link href="/events">
+        <Link href="/core/events">
           <Button>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Events

@@ -28,6 +28,7 @@ export async function createEvent({
     type,
     is_tournament,
     banner_url,
+    tournament_id,
     status
 }: { 
     title: string, 
@@ -40,6 +41,7 @@ export async function createEvent({
     type: "individual" | "team",
     is_tournament: boolean,
     banner_url: string,
+    tournament_id: string,
     status: string              // "upcoming", "registration_open", "ongoing", "completed", "cancelled"
 }) {
 
@@ -60,6 +62,8 @@ export async function createEvent({
         type,
         is_tournament,
         status,
+        banner_url,
+        tournament_id,
         created_by: createdBy
     }])
     .select()
@@ -69,7 +73,6 @@ export async function createEvent({
 
   return { success: true, data };
 }
-
 
 export async function updateEvent({
   id,
@@ -127,6 +130,19 @@ export async function deleteEvent(id: string) {
   if (error) return { success: false, error: error.message }
 
   return { success: true, message: 'Event deleted successfully' }
+}
+
+// fetching tournament to provide tournament ids for create event
+export async function getTournaments() {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from('tournaments')
+    .select('*')
+
+  if (error) return { success: false, error: error.message }
+
+  return { success: true, data }
 }
 
 // Event rounds

@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"
 import { toast } from "sonner"
 import { Users, User, Trophy, Calendar } from "lucide-react"
-import { createEvent } from "../actions"
+import { createEvent, getTournaments } from "../actions"
 
 interface CreateEventModalProps {
   isOpen: boolean
@@ -27,6 +27,8 @@ interface CreateEventModalProps {
 }
 
 export function CreateEventModal({ isOpen, onClose, onSuccess }: CreateEventModalProps) {
+  const [tournaments, setTournaments] = useState<any>([]);
+
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -38,6 +40,7 @@ export function CreateEventModal({ isOpen, onClose, onSuccess }: CreateEventModa
     type: "individual" as "individual" | "team",
     is_tournament: false,
     banner_url: "",
+    tournament_id: "",
     status: "upcoming",
   })
   const [loading, setLoading] = useState(false)
@@ -54,6 +57,29 @@ export function CreateEventModal({ isOpen, onClose, onSuccess }: CreateEventModa
     { value: "completed", label: "Completed", description: "Event has finished" },
     { value: "cancelled", label: "Cancelled", description: "Event has been cancelled" },
   ]
+
+  const handleLoadTournament = useCallback(async () => {
+    try {
+      const response = await getTournaments();
+
+      if(response.error) {
+        throw new Error(response.error);
+      }
+
+      if(response.data) {
+        setTournaments(response.data)
+      }
+
+    } catch (error: any) {
+      toast.error('Failed to fetch tournaments', {
+        description: error.message
+      })
+    }
+  }, []);
+
+  useEffect(() => {
+    handleLoadTournament()
+  }, [handleLoadTournament])
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData((prev) => ({
@@ -95,6 +121,7 @@ export function CreateEventModal({ isOpen, onClose, onSuccess }: CreateEventModa
         type: formData.type,
         is_tournament: formData.is_tournament,
         banner_url: formData.banner_url,
+        tournament_id: formData.tournament_id,
         status: formData.status,
       })
 
@@ -118,6 +145,7 @@ export function CreateEventModal({ isOpen, onClose, onSuccess }: CreateEventModa
         type: "individual",
         is_tournament: false,
         banner_url: "",
+        tournament_id: "",
         status: "upcoming",
       })
 
@@ -268,6 +296,29 @@ export function CreateEventModal({ isOpen, onClose, onSuccess }: CreateEventModa
               </Label>
               <span className="text-sm text-muted-foreground ml-2">Enable competitive tournament features</span>
             </div>
+
+            {
+              formData.is_tournament && (
+                <div className="space-y-2">
+                  <Label htmlFor="status">Tournament *</Label>
+                  <Select value={formData.tournament_id} onValueChange={(value) => handleInputChange("tournament_id", value)} required>
+                    <SelectTrigger className="bg-input border-border">
+                      <SelectValue placeholder="Select Tournament" />
+                    </SelectTrigger>
+                    <SelectContent className="border-border">
+                      {tournaments.map((tournament:any) => (
+                        <SelectItem key={tournament.id} value={tournament.id}>
+                          <div>
+                            <div className="font-medium">{tournament.title}</div>
+                            <div className="text-xs text-muted-foreground">{tournament.description}</div>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )
+            }
           </div>
 
           {/* Dates */}
