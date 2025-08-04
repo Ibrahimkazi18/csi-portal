@@ -22,6 +22,7 @@ import {
   CheckCircle,
   XCircle,
   Hourglass,
+  RefreshCcw,
 } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
@@ -319,6 +320,16 @@ export default function EventDetailsPage() {
             Register Now
           </Button>
         )}
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            onClick={() => handleEventDetailsOnLoad()}
+            // className={showApplications ? "glow-yellow" : ""}
+          >
+            <RefreshCcw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {/* Event Banner */}
@@ -640,7 +651,7 @@ export default function EventDetailsPage() {
           )}
 
           {/* Teams Needing Members */}
-          {event.type === "team" && teamsNeedingMembers.length > 0 && (
+          {event.type === "team" && teamsNeedingMembers.length > 0 && !userAlreadyInTeam && (
             <Card className="bg-dark-surface border-border">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">

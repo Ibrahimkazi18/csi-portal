@@ -15,6 +15,7 @@ import {
   UserCheck,
   UserX,
   UserPlus,
+  RefreshCcw,
 } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
@@ -41,6 +42,7 @@ export default function EventRegistrationsPage() {
     setLoadingData(true)
     try {
       const response = await getEventRegistrations(eventId)
+      console.log(response.data)
       if (!response.success) {
         throw new Error(response.error || "Failed to fetch registrations")
       }
@@ -137,6 +139,17 @@ export default function EventRegistrationsPage() {
             )}
           </div>
           <p className="text-muted-foreground">{eventData.title}</p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            onClick={() => handleRegistrationsOnLoad()}
+            // className={showApplications ? "glow-yellow" : ""}
+          >
+            <RefreshCcw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
         </div>
       </div>
 
@@ -260,7 +273,7 @@ export default function EventRegistrationsPage() {
 
           <CardContent>
             <div className="space-y-4">
-              {registrationsData.completeTeams.map((team: any) => (
+              {eventData.is_tournament && registrationsData.completeTeams.map((team: any) => (
                 <div
                   key={team.id}
                   className="p-6 rounded-lg border border-green-500/30 bg-green-500/5 hover:bg-green-500/10 transition-colors"
@@ -289,6 +302,54 @@ export default function EventRegistrationsPage() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                     {team.teams.team_members?.map((member: any, index: number) => (
+                      <div
+                        key={index}
+                        className="flex items-center gap-2 p-3 rounded-lg bg-muted/20 border border-border"
+                      >
+                        <UserCheck className="h-4 w-4 text-green-400" />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{member.profiles?.full_name}</p>
+                          <p className="text-xs text-muted-foreground truncate">{member.profiles?.email}</p>
+                        </div>
+                        {member.member_id === team.leader_id && (
+                          <Badge variant="secondary" className="text-xs">
+                            Leader
+                          </Badge>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              {!eventData.is_tournament && registrationsData.completeTeams.map((team: any) => (
+                <div
+                  key={team.id}
+                  className="p-6 rounded-lg border border-green-500/30 bg-green-500/5 hover:bg-green-500/10 transition-colors"
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <h4 className="text-lg font-medium">{team.name}</h4>
+                        <Badge variant="outline" className="bg-green-500/20 text-green-400 border-green-500/30">
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Complete
+                        </Badge>
+                        {eventData.is_tournament && (
+                          <Badge variant="outline" className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
+                            <Trophy className="h-3 w-3 mr-1" />
+                            Tournament
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-3">{team.description}</p>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {team.team_members?.length || 0}/{eventData.team_size} members
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {team.team_members?.map((member: any, index: number) => (
                       <div
                         key={index}
                         className="flex items-center gap-2 p-3 rounded-lg bg-muted/20 border border-border"

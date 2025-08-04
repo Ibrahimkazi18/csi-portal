@@ -62,8 +62,8 @@ export async function createEvent({
         type,
         is_tournament,
         status,
-        banner_url,
-        tournament_id,
+        banner_url : banner_url || null,
+        tournament_id : tournament_id || null,
         created_by: createdBy
     }])
     .select()
@@ -388,50 +388,49 @@ export async function getEventRegistrations(eventId: string) {
     }
   }
 
+  const registeredTeamIds = registrations
+    ?.filter((r) => r.team_id)
+    .map((r) => r.team_id) || []
+
   // Get incomplete teams (teams with pending invitations)
-  const { data: incompleteTeams, error: incompleteError } = await supabase
-    .from("teams")
-    .select(`
+  let incompleteTeamsQuery = supabase
+  .from("teams")
+  .select(`
+    id,
+    name,
+    leader_id,
+    description,
+    team_members(
+      member_id,
+      profiles(full_name, email)
+    ),
+    profiles(full_name, email),
+    team_invitations(
       id,
-      name,
-      leader_id,
       status,
-      user_id,
-      description,
-      teams(
-        id,
-        name,
-        leader_id,
-        team_members(
-          member_id,
-          profiles(full_name, email)
-        )
-      ),
-      profiles(full_name, email),
-      team_invitations(
-        id,
-        status,
-        invitee_id,
-        created_at,
-        profiles!team_invitations_invitee_id_fkey(full_name, email)
-      )
-    `)
-    .not(
-      "id",
-      "in",
-      `(${
-        registrations
-          ?.filter((r) => r.team_id)
-          .map((r) => r.team_id)
-          .join(",") || "null"
-      })`,
+      invitee_id,
+      created_at,
+      profiles!team_invitations_invitee_id_fkey(full_name, email)
     )
+  `)
+
+  // Only apply `.not("id", "in", ...)` if there are registered teams
+  if (registeredTeamIds.length > 0) {
+    const formattedIds = `(${registeredTeamIds.map(id => `"${id}"`).join(",")})`
+    incompleteTeamsQuery = incompleteTeamsQuery.not("id", "in", formattedIds)
+  }
+
+  const { data: incompleteTeams, error: incompleteError } = await incompleteTeamsQuery
+
+  if (incompleteError) {
+    console.error("incompleteError:", incompleteError)
+  }
   
   // Filter teams that have pending invitations or are incomplete
   const filteredIncompleteTeams =
     incompleteTeams
       ?.filter((team) => {
-        const currentMembers = (team as any).teams.team_members?.length || 0
+        const currentMembers = (team as any).team_members?.length || 0
         const hasPendingInvitations = team.team_invitations?.some((inv) => inv.status === "pending")
         return currentMembers < event.team_size || hasPendingInvitations
       })

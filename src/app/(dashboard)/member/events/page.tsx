@@ -3,14 +3,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { Calendar, Users, User, Trophy, Clock, MapPin, AlertCircle, Bell, UserPlus, Eye, Disc } from "lucide-react"
+import { Calendar, Users, User, Trophy, Clock, MapPin, AlertCircle, Bell, UserPlus, Eye, Disc, RefreshCcw } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
 import { getAllEvents } from "./actions"
-import { TeamInvitationsCard } from "./components/team-invitations-card"
-import { PendingTeamsCard } from "./components/pending-team-cards"
-import { TeamApplicationsCard } from "./components/team-applications-card"
 import Link from "next/link"
 
 export default function MemberEventsPage() {
@@ -21,9 +17,6 @@ export default function MemberEventsPage() {
     completed: [],
     ongoing: [],
   })
-  const [showInvitations, setShowInvitations] = useState(false)
-  const [showPendingTeams, setShowPendingTeams] = useState(false)
-  const [showApplications, setShowApplications] = useState(false)
 
   const handleAllEventsOnLoad = useCallback(async () => {
     setLoadingData(true)
@@ -172,7 +165,18 @@ export default function MemberEventsPage() {
             )}
           </div>
 
-          {event.status === "upcoming" || event.status === "registration_open" &&
+          {event.status === "upcoming" &&
+            <div className="flex gap-2">
+              <Link href={`/member/events/${event.id}`}>
+                <Button variant="outline" size="sm">
+                  <Eye className="h-4 w-4 mr-2" />
+                  View Details
+                </Button>
+              </Link>
+            </div>
+          }
+
+          {event.status === "registration_open" &&
             <div className="flex gap-2">
               <Link href={`/member/events/${event.id}`}>
                 <Button variant="outline" size="sm">
@@ -219,36 +223,14 @@ export default function MemberEventsPage() {
         <div className="flex items-center gap-3">
           <Button
             variant="outline"
-            onClick={() => setShowInvitations(!showInvitations)}
-            className={showInvitations ? "glow-blue" : ""}
+            onClick={() => handleAllEventsOnLoad()}
+            // className={showApplications ? "glow-yellow" : ""}
           >
-            <Bell className="h-4 w-4 mr-2" />
-            Team Invitations
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => setShowPendingTeams(!showPendingTeams)}
-            className={showPendingTeams ? "glow-purple" : ""}
-          >
-            <Users className="h-4 w-4 mr-2" />
-            Find Teams
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => setShowApplications(!showApplications)}
-            className={showApplications ? "glow-yellow" : ""}
-          >
-            <UserPlus className="h-4 w-4 mr-2" />
-            My Applications
+            <RefreshCcw className="h-4 w-4 mr-2" />
+            Refresh
           </Button>
         </div>
       </div>
-
-      {/* Team Management Cards */}
-      {showInvitations && <TeamInvitationsCard onUpdate={handleAllEventsOnLoad} />}
-      {showPendingTeams && <PendingTeamsCard onUpdate={handleAllEventsOnLoad} />}
-      {showApplications && <TeamApplicationsCard onUpdate={handleAllEventsOnLoad} />}
-      {(showInvitations || showPendingTeams || showApplications) && <Separator />}
 
       {loadingData ? (
         <div className="text-center py-8 text-muted-foreground">Loading events...</div>

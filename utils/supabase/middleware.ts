@@ -37,6 +37,18 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  const path = request.nextUrl.pathname
+
+  if (
+    path.startsWith('/login') ||
+    path.startsWith('/auth') ||
+    path === '/favicon.ico' ||
+    path.startsWith('/_next') ||  
+    path.startsWith('/api')     
+  ) {
+    return NextResponse.next()
+  }
+
   if (!user) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
@@ -63,7 +75,6 @@ export async function updateSession(request: NextRequest) {
   }
 
   const role = profile.role
-  const path = request.nextUrl.pathname
 
   // Access Control Logic
   if (path.startsWith('/core') && role !== 'core') {
