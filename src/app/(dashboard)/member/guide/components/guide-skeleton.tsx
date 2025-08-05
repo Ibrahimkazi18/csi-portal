@@ -1,6 +1,5 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
-
 export default function GuideLoadingSkeleton() {
   return (
     <div className="space-y-6">
