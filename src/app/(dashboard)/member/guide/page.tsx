@@ -2,18 +2,18 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-import { Button } from "@/components/ui/button"
-import { BookOpen, ChevronDown, Edit, Info, Plus, Settings, Trash2 } from "lucide-react"
+import { BookOpen, ChevronDown, Info } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
 import { fetchGuideSections } from "./actions"
 import { PostgrestError } from "@supabase/supabase-js"
 import { iconMap } from "../../core/guide/constants"
+import GuideLoadingSkeleton from "./components/guide-skeleton"
 
 export default function GuidePage() {
   const [guideContents, setGuideContents] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
-  
+
   const fetchGuides = useCallback(async () => {
     setLoading(true)
     try {
@@ -37,6 +37,10 @@ export default function GuidePage() {
     fetchGuides()
   }, [fetchGuides])
 
+
+  if(loading) {
+    return <GuideLoadingSkeleton />  
+  }
 
   return (
     <div className="space-y-6">

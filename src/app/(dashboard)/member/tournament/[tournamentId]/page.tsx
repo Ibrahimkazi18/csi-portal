@@ -11,11 +11,7 @@ import {
   Clock,
   UserPlus,
   Bell,
-  FileText,
   Award,
-  CheckCircle,
-  XCircle,
-  Hourglass,
 } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
@@ -30,6 +26,7 @@ import {
   respondToTournamentApplication,
 } from "../actions"
 import { CreateTournamentTeamModal } from "../components/create-tournament-team-modal"
+import { TournamentDetailsSkeleton } from "../components/tournament-skeleton"
 
 export default function TournamentDetailsPage() {
   const params = useParams()
@@ -137,34 +134,8 @@ export default function TournamentDetailsPage() {
     }
   }
 
-  const getApplicationStatusIcon = (status: string) => {
-    switch (status) {
-      case "accepted":
-        return CheckCircle
-      case "rejected":
-        return XCircle
-      case "pending":
-        return Hourglass
-      default:
-        return FileText
-    }
-  }
-
-  const getApplicationStatusColor = (status: string) => {
-    switch (status) {
-      case "accepted":
-        return "text-green-400"
-      case "rejected":
-        return "text-red-400"
-      case "pending":
-        return "text-yellow-400"
-      default:
-        return "text-muted-foreground"
-    }
-  }
-
   if (loading) {
-    return <div className="text-center py-8 text-muted-foreground">Loading tournament details...</div>
+    return <TournamentDetailsSkeleton />
   }
 
   if (!tournamentData) {

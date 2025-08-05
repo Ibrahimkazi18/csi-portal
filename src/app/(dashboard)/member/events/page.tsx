@@ -8,6 +8,7 @@ import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
 import { getAllEvents } from "./actions"
 import Link from "next/link"
+import { EventsPageSkeleton } from "./components/events-skeleton"
 
 export default function MemberEventsPage() {
   const [loadingData, setLoadingData] = useState(true)
@@ -69,6 +70,10 @@ export default function MemberEventsPage() {
       default:
         return Clock
     }
+  }
+
+  if(loadingData) {
+    return <EventsPageSkeleton />
   }
 
   const isRegistrationDeadlinePassed = (deadline: string) => {
@@ -224,7 +229,6 @@ export default function MemberEventsPage() {
           <Button
             variant="outline"
             onClick={() => handleAllEventsOnLoad()}
-            // className={showApplications ? "glow-yellow" : ""}
           >
             <RefreshCcw className="h-4 w-4 mr-2" />
             Refresh

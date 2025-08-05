@@ -41,6 +41,7 @@ import {
 import { EventRegistrationModal } from "../components/event-registration-modal"
 import Link from "next/link"
 import { useParams } from "next/navigation"
+import { EventDetailsPageSkeleton } from "../components/event-details-skeleton"
 
 export default function EventDetailsPage() {
   const params = useParams()
@@ -256,7 +257,7 @@ export default function EventDetailsPage() {
   }
 
   if (loadingData) {
-    return <div className="text-center py-8 text-muted-foreground">Loading event details...</div>
+    return <EventDetailsPageSkeleton />
   }
 
   if (!eventData) {

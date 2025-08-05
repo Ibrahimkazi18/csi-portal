@@ -23,6 +23,7 @@ import { toast } from "sonner"
 import { useParams } from "next/navigation"
 import Link from "next/link"
 import { getEventResults } from "./actions"
+import { EventResultsPageSkeleton } from "../../components/event-results-skeleton"
 
 export default function EventResultsPage() {
   const params = useParams()
@@ -108,7 +109,7 @@ export default function EventResultsPage() {
   }
 
   if (loading) {
-    return <div className="text-center py-8 text-muted-foreground">Loading event results...</div>
+    return <EventResultsPageSkeleton />
   }
 
   if (!eventData) {

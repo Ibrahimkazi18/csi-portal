@@ -15,6 +15,7 @@ import { EditBioModal } from "./components/edit-bio-modal"
 import { UpdateAvatarModal } from "./components/update-avatar-modal"
 import { AccountSettingsModal } from "./components/account-settings-modal"
 import { AchievementsSection } from "./components/achievements-section"
+import ProfileLoadingSkeleton from "./components/profile-skeleton"
 
 interface ProfileData {
   id: string
@@ -70,24 +71,7 @@ export default function ProfilePage() {
   }, [loadProfileData])
 
   if (loading) {
-    return (
-      <div className="space-y-6">
-        <div className="animate-pulse">
-          <div className="h-8 bg-muted rounded w-48 mb-2"></div>
-          <div className="h-4 bg-muted rounded w-64"></div>
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-            <div className="h-64 bg-muted rounded-lg"></div>
-            <div className="h-48 bg-muted rounded-lg"></div>
-          </div>
-          <div className="space-y-6">
-            <div className="h-32 bg-muted rounded-lg"></div>
-            <div className="h-48 bg-muted rounded-lg"></div>
-          </div>
-        </div>
-      </div>
-    )
+    return <ProfileLoadingSkeleton />
   }
 
   if (!profileData) {

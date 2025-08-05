@@ -23,6 +23,7 @@ import { toast } from "sonner"
 import { useParams } from "next/navigation"
 import Link from "next/link"
 import { getMemberLiveEventData, getUserEventStatus } from "./actions"
+import { LiveEventPageSkeleton } from "../../components/live-event-skeleton"
 
 export default function MemberLiveEventPage() {
   const params = useParams()
@@ -152,7 +153,7 @@ export default function MemberLiveEventPage() {
   }
 
   if (loading) {
-    return <div className="text-center py-8 text-muted-foreground">Loading event data...</div>
+    return <LiveEventPageSkeleton />
   }
 
   if (!eventData) {

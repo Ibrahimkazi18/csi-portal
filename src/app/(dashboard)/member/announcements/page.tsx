@@ -8,12 +8,11 @@ import { Plus, Calendar, Edit, Trash2, AlertCircle, Users, Shield, Settings } fr
 import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
 import { getAnnouncements, updateLastSeenAnnoucement } from "./actions"
+import { AnnouncementsPageSkeleton } from "./components/announcements-skeleton"
 
 export default function AnnouncementsPage() {
   const [loadingData, setLoadingData] = useState(true)
   const [announcements, setAnnouncements] = useState<any[]>([])
-  const [announcementsForEdit, setAnnouncementsForEdit] = useState<any[]>([])
-  const [isManagementMode, setIsManagementMode] = useState(false)
 
   const handleAllAnnouncementsOnLoad = useCallback(async () => {
     setLoadingData(true)
@@ -34,7 +33,6 @@ export default function AnnouncementsPage() {
         )
 
         setAnnouncements(forView)
-        setAnnouncementsForEdit(announcementsData)
       }
     } catch (error) {
       console.error("Failed to fetch announcements:", error)
@@ -75,6 +73,10 @@ export default function AnnouncementsPage() {
       default:
         return "bg-gray-500/20 text-gray-400 border-gray-500/30"
     }
+  }
+
+  if (loadingData) {
+    return <AnnouncementsPageSkeleton />
   }
 
   return (

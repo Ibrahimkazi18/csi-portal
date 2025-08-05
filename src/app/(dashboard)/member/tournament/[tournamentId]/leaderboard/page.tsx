@@ -9,6 +9,7 @@ import { toast } from "sonner"
 import { useParams } from "next/navigation"
 import Link from "next/link"
 import { getTournamentLeaderboard, getTournamentDetails } from "../../actions"
+import { TournamentLeaderboardSkeleton } from "../../components/tournament-skeleton"
 
 export default function TournamentLeaderboardPage() {
   const params = useParams()
@@ -89,7 +90,7 @@ export default function TournamentLeaderboardPage() {
   }
 
   if (loading) {
-    return <div className="text-center py-8 text-muted-foreground">Loading leaderboard...</div>
+    return <TournamentLeaderboardSkeleton />
   }
 
   return (

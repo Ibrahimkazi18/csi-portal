@@ -16,6 +16,7 @@ import {
 } from "./actions"
 import { CreateTournamentTeamModal } from "./components/create-tournament-team-modal"
 import Link from "next/link"
+import { TournamentListSkeleton } from "./components/tournament-skeleton"
 
 export default function MemberTournamentsPage() {
   const [loading, setLoading] = useState(true)
@@ -129,7 +130,7 @@ export default function MemberTournamentsPage() {
   }
 
   if (loading) {
-    return <div className="text-center py-8 text-muted-foreground">Loading tournaments...</div>
+    return <TournamentListSkeleton />
   }
 
   return (
