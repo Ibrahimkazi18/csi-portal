@@ -6,17 +6,14 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import { Progress } from "@/components/ui/progress"
-import { User, Mail, Calendar, Trophy, Users, Target, TrendingUp, Edit, Settings, Crown, Activity, Search } from "lucide-react"
+import { User, Mail, Calendar, Trophy, Users, Target, TrendingUp, Crown, Activity, Search } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
-import { getProfile } from "./actions"
-import * as z from "zod"
-import { EditBioModal } from "./components/edit-bio-modal"
-import { UpdateAvatarModal } from "./components/update-avatar-modal"
-import { AccountSettingsModal } from "./components/account-settings-modal"
-import { AchievementsSection } from "./components/achievements-section"
-import ProfileLoadingSkeleton from "./components/profile-skeleton"
-import SearcgProfileModal from "./components/search-profile-modal"
+import { getSearchedProfile } from "../actions"
+import { AchievementsSection } from "../components/achievements-section"
+import ProfileLoadingSkeleton from "../components/profile-skeleton"
+import SearcgProfileModal from "../components/search-profile-modal"
+import { useParams } from "next/navigation"
 
 interface ProfileData {
   id: string
@@ -40,17 +37,17 @@ interface ProfileData {
 
 
 export default function ProfilePage() {
+  const params = useParams()
+  const profileId = params.profileId as string
+
   const [loading, setLoading] = useState(true)
   const [profileData, setProfileData] = useState<ProfileData | null>(null)
-  const [editBioOpen, setEditBioOpen] = useState(false)
   const [searchProfileOpen, setSearchProfileOpen] = useState(false)
-  const [updateAvatarOpen, setUpdateAvatarOpen] = useState(false)
-  const [accountSettingsOpen, setAccountSettingsOpen] = useState(false)
 
   const loadProfileData = useCallback(async () => {
     setLoading(true)
     try {
-      const profileResponse = await getProfile()
+      const profileResponse = await getSearchedProfile(profileId)
 
       if (!profileResponse.success) {
         throw new Error(profileResponse.message)
@@ -81,7 +78,7 @@ export default function ProfilePage() {
       <div className="text-center py-12">
         <User className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
         <h2 className="text-xl font-semibold mb-2">Profile not found</h2>
-        <p className="text-muted-foreground">Unable to load your profile data.</p>
+        <p className="text-muted-foreground">Unable to load their profile data.</p>
         <Button onClick={loadProfileData} className="mt-4">
           Try Again
         </Button>
@@ -104,12 +101,12 @@ export default function ProfilePage() {
     : []
 
   return (
-    <div className="space-y-6 bg-darker-surface">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-3xl font-bold text-lavender">My Profile</h1>
-          <p className="text-muted-foreground">Manage your CSI profile and track your progress</p>
+          <h1 className="text-3xl font-bold text-lavender">{profileData?.full_name}&apos;s Profile</h1>
+          <p className="text-muted-foreground">View {profileData?.full_name.split(" ")[0]}&apos;s CSI profile and track their progress</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -177,7 +174,7 @@ export default function ProfilePage() {
                 <Activity className="h-5 w-5 text-primary" />
                 Activity Overview
               </CardTitle>
-              <CardDescription>Your participation and performance statistics</CardDescription>
+              <CardDescription>Their participation and performance statistics</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
@@ -222,7 +219,7 @@ export default function ProfilePage() {
                   <Target className="h-5 w-5 text-accent" />
                   Events Participated
                 </CardTitle>
-                <CardDescription>Events you've joined and competed in</CardDescription>
+                <CardDescription>Events they've joined and competed in</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-wrap gap-2">
@@ -244,7 +241,7 @@ export default function ProfilePage() {
                   <Users className="h-5 w-5 text-blue-500" />
                   Teams & Collaborations
                 </CardTitle>
-                <CardDescription>Teams you've been part of</CardDescription>
+                <CardDescription>Teams they've been part of</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
@@ -272,7 +269,7 @@ export default function ProfilePage() {
 
         {/* Sidebar */}
         <div className="space-y-6">
-          <AchievementsSection profileData={profileData} isMy={true} />
+          <AchievementsSection profileData={profileData} isMy={false}/>
 
           {/* Performance Insights */}
           <Card className="bg-dark-surface border-border">
@@ -311,66 +308,15 @@ export default function ProfilePage() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Quick Actions */}
-          <Card className="bg-dark-surface border-border">
-            <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Button
-                variant="outline"
-                className="w-full justify-start gap-2 bg-transparent"
-                onClick={() => setEditBioOpen(true)}
-              >
-                <Edit className="h-4 w-4" />
-                Edit Bio
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full justify-start gap-2 bg-transparent"
-                onClick={() => setUpdateAvatarOpen(true)}
-              >
-                <User className="h-4 w-4" />
-                Update Avatar
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full justify-start gap-2 bg-transparent"
-                onClick={() => setAccountSettingsOpen(true)}
-              >
-                <Settings className="h-4 w-4" />
-                Account Settings
-              </Button>
-            </CardContent>
-          </Card>
         </div>
       </div>
+
       {/* Modals */}
-      <EditBioModal
-        open={editBioOpen}
-        onOpenChange={setEditBioOpen}
-        currentBio={profileData?.bio || ""}
-        onSuccess={loadProfileData}
-      />
-
-      <UpdateAvatarModal
-        open={updateAvatarOpen}
-        onOpenChange={setUpdateAvatarOpen}
-        currentAvatar={profileData?.avatar_url}
-        onSuccess={loadProfileData}
-      />
-
-      <AccountSettingsModal
-        open={accountSettingsOpen}
-        onOpenChange={setAccountSettingsOpen}
-      />
-
       <SearcgProfileModal 
         open={searchProfileOpen}
         onOpenChange={setSearchProfileOpen}
       />
-
+      
     </div>
   )
 }

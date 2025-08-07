@@ -49,6 +49,79 @@ export async function getProfile() {
   };
 }
 
+export async function getSearchedProfile(profileId: string) {
+  const supabase = await createClient();
+
+  // Get current authenticated user
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    return { success: false, message: "User not authenticated" };
+  }
+
+  // Fetch profile from profiles table
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", profileId)
+    .single();
+
+  if (profileError || !profile) {
+    return { success: false, message: "Error fetching profile" };
+  }
+
+  // Fetch stats from user_participation_stats view
+  const { data: stats, error: statsError } = await supabase
+    .from("user_participation_stats")
+    .select("*")
+    .eq("id", profileId)
+    .single();
+
+  if (statsError || !stats) {
+    return { success: true, profile }; // fallback to just profile
+  }
+
+  // Remove duplicated keys from stats before merging
+  const { id, full_name, email, ...cleanedStats } = stats;
+
+  return {
+    success: true,
+    profile: {
+      ...profile,
+      ...cleanedStats,
+    },
+  };
+}
+
+export async function getAllMembers() {
+  const supabase = await createClient();
+
+  // Get current authenticated user
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    return { success: false, message: "User not authenticated" };
+  }
+
+  // Fetch profiles from profiles table
+  const { data: profiles, error: profileError } = await supabase
+    .from("profiles")
+    .select("*")
+    .neq("id", user.id)
+    .eq('role', 'member')
+
+  if (profileError || !profiles) {
+    return { success: false, message: "Error fetching profile" };
+  }
+
+  return { success: true, data: profiles };
+}
 
 export async function updateBio(bio: string) {
   const supabase = await createClient()

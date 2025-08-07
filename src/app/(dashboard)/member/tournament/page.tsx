@@ -138,7 +138,7 @@ export default function MemberTournamentsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-neon">Tournaments</h1>
+          <h1 className="text-3xl font-bold text-neon text-lavender">Tournaments</h1>
           <p className="text-muted-foreground">Join tournaments and compete with your team</p>
         </div>
       </div>

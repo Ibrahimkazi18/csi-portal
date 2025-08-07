@@ -222,9 +222,10 @@ export default function MemberEventsPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-neon">Events</h1>
+          <h1 className="text-3xl font-bold text-neon text-lavender">Events</h1>
           <p className="text-muted-foreground">Discover and register for CSI events and competitions</p>
         </div>
+        
         <div className="flex items-center gap-3">
           <Button
             variant="outline"

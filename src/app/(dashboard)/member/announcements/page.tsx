@@ -83,7 +83,7 @@ export default function AnnouncementsPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-neon">Announcements</h1>
+          <h1 className="text-3xl font-bold text-neon text-lavender">Announcements</h1>
           <p className="text-muted-foreground">Manage CSI announcements and notifications</p>
         </div>
         <div className="flex items-center gap-3">

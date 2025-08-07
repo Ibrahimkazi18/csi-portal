@@ -8,9 +8,10 @@ import { calculateEarnedAchievements, getProgressAchievements, type Achievement 
 
 interface AchievementsSectionProps {
   profileData: any
+  isMy : boolean
 }
 
-export function AchievementsSection({ profileData }: AchievementsSectionProps) {
+export function AchievementsSection({ profileData, isMy }: AchievementsSectionProps) {
   const earnedAchievements = calculateEarnedAchievements(profileData)
   const progressAchievements = getProgressAchievements(profileData)
 
@@ -21,7 +22,7 @@ export function AchievementsSection({ profileData }: AchievementsSectionProps) {
           <Award className="h-5 w-5 text-yellow-500" />
           Achievements
         </CardTitle>
-        <CardDescription>Your accomplishments and progress milestones</CardDescription>
+        <CardDescription>{isMy ? "Your" : "Their"} accomplishments and progress milestones</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Achievement Count */}

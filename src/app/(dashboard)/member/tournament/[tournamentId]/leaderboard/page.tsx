@@ -105,7 +105,7 @@ export default function TournamentLeaderboardPage() {
         </Link>
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-3xl font-bold text-neon">Tournament Leaderboard</h1>
+            <h1 className="text-3xl font-bold text-neon text-lavender">Tournament Leaderboard</h1>
             <Badge variant="outline" className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
               <Trophy className="h-4 w-4 mr-1" />
               {tournament?.title}

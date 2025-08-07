@@ -1,24 +1,14 @@
-import { getProfileUser } from "@/components/actions";
-import CoreTeamSidebar from "@/components/core-team-sidebar";
-import MemberSidebar from "@/components/member-sidebar";
+import { getProfileUser } from "@/components/actions"
+import ResponsiveDashboardLayout from "@/components/responsive-dashboard-layout"
 
 interface DashboardLayoutProps {
-  children: React.ReactNode;
+  children: React.ReactNode
 }
 
 export default async function DashboardLayout({ children }: DashboardLayoutProps) {
-  const respone = await getProfileUser();
-  const user = respone.user;
-  const role = user?.role;
+  const response = await getProfileUser()
+  const user = response.user
+  const role = user?.role
 
-  return (
-    <div className="flex h-screen bg-background">
-      {role === 'core' ? <CoreTeamSidebar /> : <MemberSidebar />}
-      <main className="flex-1 overflow-auto">
-        <div className="p-6">
-          {children}
-        </div>
-      </main>
-    </div>
-  );
+  return <ResponsiveDashboardLayout role={role}>{children}</ResponsiveDashboardLayout>
 }

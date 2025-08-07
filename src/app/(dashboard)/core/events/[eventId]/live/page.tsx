@@ -529,7 +529,16 @@ export default function LiveEventPage() {
                           className="w-full px-3 py-2 bg-input border border-border rounded-md"
                         >
                           <option value="" className="dark:bg-gray-800 dark:text-white">Select winner...</option>
-                          {registrations.map((reg: any) => (
+                          {registrations
+                            .filter((reg: any) => {
+                              const selectedIds = selectedWinners
+                                .filter((_, i) => i !== index) // exclude current index
+                                .map((w) => w.teamId || w.userId)
+
+                              const id = reg.team_id || reg.user_id
+                              return !selectedIds.includes(id)
+                            })
+                            .map((reg: any) => (
                             <option key={reg.id} value={reg.team_id || reg.user_id} className="dark:bg-gray-800 dark:text-white">
                               {reg.registration_type === "team" ? reg.teams?.name : reg.profiles?.full_name}
                             </option>
