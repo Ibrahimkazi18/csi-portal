@@ -16,13 +16,15 @@ import {
   UserX,
   UserPlus,
   RefreshCcw,
+  Sheet,
+  Copy,
 } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
 
 import Link from "next/link"
 import { useParams } from "next/navigation"
-import { getEventRegistrations } from "../../actions"
+import { createAttendanceSheet, getEventRegistrations } from "../../actions"
 
 export default function EventRegistrationsPage() {
   const params = useParams()
@@ -42,7 +44,6 @@ export default function EventRegistrationsPage() {
     setLoadingData(true)
     try {
       const response = await getEventRegistrations(eventId)
-      console.log(response.data)
       if (!response.success) {
         throw new Error(response.error || "Failed to fetch registrations")
       }
@@ -100,6 +101,41 @@ export default function EventRegistrationsPage() {
     return <div className="text-center py-8 text-muted-foreground">Loading registrations...</div>
   }
 
+  const handleCreateAttendanceSheet = async () => {
+    try {
+      const response = await createAttendanceSheet({eventData, registrationsData });
+
+      if(response.error) {
+        throw new Error(response.error)
+      }
+
+      if(response.success) {
+        toast.success('Attendance Created Succesfully', {
+          description: (
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="secondary"
+                className="ml-auto"
+                onClick={() => {
+                  navigator.clipboard.writeText(response.url)
+                  toast("Copied to clipboard!")
+                }}
+              >
+                <Copy className="h-4 w-4 mr-1" />
+                Copy Sheet Link
+              </Button>
+            </div>
+          ),
+          duration: 8000,
+        })
+      }
+
+    } catch (error: any) {
+      toast.error(error.message)
+    }
+  }
+
   if (!eventData) {
     return (
       <div className="text-center py-8">
@@ -142,6 +178,14 @@ export default function EventRegistrationsPage() {
         </div>
 
         <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            onClick={() => handleCreateAttendanceSheet()}
+          >
+            <Sheet className="h-4 w-4 mr-2" />
+            Create Sheet
+          </Button>
+
           <Button
             variant="outline"
             onClick={() => handleRegistrationsOnLoad()}

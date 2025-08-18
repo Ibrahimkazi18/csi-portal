@@ -1,7 +1,9 @@
 "use server";
 
 import { createClient } from "../../../../../utils/supabase/server";
+import { google, sheets_v4, drive_v3 } from "googleapis";
 
+const SCOPES = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive", 'https://www.googleapis.com/auth/drive.file'];
 
 // Events
 export async function getEvents() {
@@ -168,7 +170,6 @@ export async function addEventRounds(
         round_number: number 
     }[]
 ) {
-  console.log('rounds: ', rounds);
   const supabase = await createClient();
 
   // Fetch existing rounds to check for duplicates
@@ -178,7 +179,6 @@ export async function addEventRounds(
     .eq('event_id', eventId);
 
   if (fetchError) {
-    console.log('fetch error: ', fetchError);
     throw new Error(fetchError.message);
   }
 
@@ -201,7 +201,6 @@ export async function addEventRounds(
     .insert(payload)
     .select();
 
-  console.log('insert error: ', error);
   if (error) throw error;
   return data;
 }
@@ -371,8 +370,6 @@ export async function getEventRegistrations(eventId: string) {
     const registeredTeamIds = new Set(registrations.map((reg) => reg.team_id));
     const pendingTeams = tournamentTeams.filter((team) => !registeredTeamIds.has(team.id));
 
-    console.log(pendingTeams)
-
     return {
       success: true,
       data : {
@@ -413,6 +410,7 @@ export async function getEventRegistrations(eventId: string) {
       profiles!team_invitations_invitee_id_fkey(full_name, email)
     )
   `)
+  .eq('event_id', event.id)
 
   // Only apply `.not("id", "in", ...)` if there are registered teams
   if (registeredTeamIds.length > 0) {
@@ -465,5 +463,55 @@ export async function getEventRegistrations(eventId: string) {
         tournamentPending: []
       },
     },
+  }
+}
+
+
+// Create attendance sheet
+export async function createAttendanceSheet({
+  eventData,
+  registrationsData,
+}: {
+  eventData: any;
+  registrationsData: any;
+}) {
+  try {
+    const supabase = await createClient();
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      return { success: false, error: 'User not authenticated' };
+    }
+
+    const { data: coreEmails, error: coreEmailsError } = await supabase
+      .from('profiles')
+      .select('email')
+      .eq('role', 'core');
+
+    if (coreEmailsError) return { success: false, error: coreEmailsError.message };
+    if (!coreEmails || coreEmails.length === 0) return { success: false, error: 'No core members found' };
+
+    const GAS_ENDPOINT = process.env.NEXT_PUBLIC_GAS_ENDPOINT!;
+
+    const response = await fetch(GAS_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        eventData,
+        registrationsData,
+        coreEmails: coreEmails.map(e => e.email),
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!result.success) {
+      return { success: false, error: result.error || 'Unknown error from GAS' };
+    }
+
+    return { success: true, url: result.url };
+
+  } catch (err: any) {
+    console.error('Error calling GAS:', err);
+    return { success: false, error: err.message || 'Server error' };
   }
 }
