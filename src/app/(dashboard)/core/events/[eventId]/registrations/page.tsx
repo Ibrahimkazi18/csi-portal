@@ -131,6 +131,12 @@ export default function EventRegistrationsPage() {
         })
       }
 
+      if(response.updated) {
+        toast.success('Updated Event Status', {
+          description: "Event status changed to Ongoing"
+        })
+      }
+
     } catch (error: any) {
       toast.error(error.message)
     }

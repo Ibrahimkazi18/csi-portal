@@ -508,7 +508,20 @@ export async function createAttendanceSheet({
       return { success: false, error: result.error || 'Unknown error from GAS' };
     }
 
-    return { success: true, url: result.url };
+    const updatedBy = (await supabase.auth.getUser()).data.user?.id
+
+    const { error } = await supabase
+      .from('events')
+      .update({
+        status: 'ongoing',
+        updated_at: new Date().toISOString(),
+        updated_by: updatedBy,
+      })
+      .eq('id', eventData.id)
+
+    if (error) return { success: false, error: error.message, updated: false }
+
+    return { success: true, url: result.url, updated: true };
 
   } catch (err: any) {
     console.error('Error calling GAS:', err);

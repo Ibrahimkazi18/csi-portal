@@ -217,7 +217,54 @@ export async function eliminateParticipant({
     return { success: false, error: error.message }
   }
 
-  return { success: true, message: "Participant eliminated successfully" }
+  // Fetch event to see if it's a tournament
+  const { data: event, error: eventError } = await supabase
+    .from("events")
+    .select("is_tournament, tournament_id")
+    .eq("id", eventId)
+    .single()
+
+  if (eventError || !event.is_tournament || !teamId) {
+    return { success: true, message: "Participant eliminated successfully" }
+  }
+
+  // Deduct 50 points from tournament_points
+  const { data: existingPoints, error: pointsFetchError } = await supabase
+    .from("tournament_points")
+    .select("id, points, losses")
+    .eq("team_id", teamId)
+    .eq("tournament_id", event.tournament_id)
+    .maybeSingle()
+
+  if (pointsFetchError) {
+    console.error("Failed to fetch tournament points for deduction", pointsFetchError)
+    return { success: true, message: "Participant eliminated, but point deduction failed" }
+  }
+
+  if (existingPoints) {
+    await supabase
+      .from("tournament_points")
+      .update({
+        points: existingPoints.points - 50,
+        losses: (existingPoints.losses || 0) + 1,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", existingPoints.id)
+  } else {
+    await supabase
+      .from("tournament_points")
+      .insert({
+        tournament_id: event.tournament_id,
+        team_id: teamId,
+        points: -50,
+        matches_played: 1,
+        losses: 1,
+        wins: 0,
+        updated_at: new Date().toISOString(),
+      })
+  }
+
+  return { success: true, message: "Participant eliminated and points deducted" }
 }
 
 export async function setEventWinners({
