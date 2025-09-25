@@ -109,6 +109,8 @@ export function CreateEventModal({ isOpen, onClose, onSuccess }: CreateEventModa
       return
     }
 
+
+
     try {
       const response = await createEvent({
         title: formData.title.trim(),
@@ -147,7 +149,7 @@ export function CreateEventModal({ isOpen, onClose, onSuccess }: CreateEventModa
         banner_url: "",
         tournament_id: "",
         status: "upcoming",
-      })
+      });
 
       onSuccess()
       onClose()

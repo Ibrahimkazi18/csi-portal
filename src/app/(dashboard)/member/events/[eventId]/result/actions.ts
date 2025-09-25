@@ -14,22 +14,43 @@ export async function getEventResults(eventId: string) {
     return { success: false, error: "User not authenticated" }
   }
 
-  // Check if user is core team member
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single()
-
-  if (profileError || !profile || profile.role !== "member") {
-    return { success: false, error: "Access denied. Core team members only." }
-  }
-
   // Get event details
   const { data: event, error: eventError } = await supabase.from("events").select("*").eq("id", eventId).single()
 
   if (eventError || !event) {
     return { success: false, error: "Event not found" }
+  }
+
+  // Check if user participated in this event
+  const { data: participation, error: participationError } = await supabase
+    .from("event_registrations")
+    .select(`
+      id,
+      registration_type,
+      user_id,
+      team_id,
+      teams(
+        team_members(member_id)
+      )
+    `)
+    .eq("event_id", eventId)
+
+  if (participationError) {
+    return { success: false, error: "Failed to check participation" }
+  }
+
+  // Check if current user participated
+  const userParticipated = participation?.some((reg: any) => {
+    if (reg.registration_type === "individual") {
+      return reg.user_id === user.id
+    } else if (reg.registration_type === "team" && reg.teams) {
+      return reg.teams.team_members?.some((member: any) => member.member_id === user.id)
+    }
+    return false
+  })
+
+  if (!userParticipated) {
+    return { success: false, error: "You did not participate in this event" }
   }
 
   // Get event rounds
@@ -92,12 +113,6 @@ export async function getEventResults(eventId: string) {
     return { success: false, error: "Failed to fetch winners" }
   }
 
-  // Get event progress for additional insights
-  const { data: progress, error: progressError } = await supabase
-    .from("event_progress")
-    .select("*")
-    .eq("event_id", eventId)
-
   return {
     success: true,
     data: {
@@ -105,7 +120,6 @@ export async function getEventResults(eventId: string) {
       rounds: rounds || [],
       registrations: registrations || [],
       winners: winners || [],
-      progress: progress || [],
     },
   }
 }

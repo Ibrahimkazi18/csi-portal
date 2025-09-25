@@ -1,9 +1,7 @@
 "use server";
 
 import { createClient } from "../../../../../utils/supabase/server";
-import { google, sheets_v4, drive_v3 } from "googleapis";
-
-const SCOPES = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive", 'https://www.googleapis.com/auth/drive.file'];
+import { v4 as uuidv4 } from 'uuid';
 
 // Events
 export async function getEvents() {
@@ -31,7 +29,7 @@ export async function createEvent({
     is_tournament,
     banner_url,
     tournament_id,
-    status
+    status,
 }: { 
     title: string, 
     description: string,
@@ -499,6 +497,7 @@ export async function createAttendanceSheet({
         eventData,
         registrationsData,
         coreEmails: coreEmails.map(e => e.email),
+        action: 'createAttendanceSheet'
       }),
     });
 

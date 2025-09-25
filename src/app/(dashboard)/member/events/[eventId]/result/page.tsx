@@ -23,13 +23,13 @@ import { toast } from "sonner"
 import { useParams } from "next/navigation"
 import Link from "next/link"
 import { getEventResults } from "./actions"
-import { EventResultsPageSkeleton } from "../../components/event-results-skeleton"
 
 export default function EventResultsPage() {
   const params = useParams()
   const eventId = params.eventId as string
   const [loading, setLoading] = useState(true)
   const [eventData, setEventData] = useState<any>(null)
+  const [refreshing, setRefreshing] = useState(false)
 
   const loadEventData = useCallback(async () => {
     setLoading(true)
@@ -47,6 +47,15 @@ export default function EventResultsPage() {
       setLoading(false)
     }
   }, [eventId])
+
+  const handleRefresh = async () => {
+    setRefreshing(true)
+    await loadEventData()
+    setRefreshing(false)
+    toast.success("Data refreshed")
+  }
+
+
 
   useEffect(() => {
     loadEventData()
@@ -109,7 +118,16 @@ export default function EventResultsPage() {
   }
 
   if (loading) {
-    return <EventResultsPageSkeleton />
+    return (
+      <div className="space-y-6">
+        <div className="animate-pulse">
+          <div className="h-8 bg-muted rounded w-1/3 mb-4"></div>
+          <div className="h-64 bg-muted rounded mb-6"></div>
+          <div className="h-32 bg-muted rounded mb-6"></div>
+          <div className="h-48 bg-muted rounded"></div>
+        </div>
+      </div>
+    )
   }
 
   if (!eventData) {

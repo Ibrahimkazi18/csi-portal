@@ -18,6 +18,7 @@ import {
   AlertTriangle,
   Target,
   ChevronRight,
+  Copy,
 } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
@@ -204,9 +205,11 @@ export default function LiveEventPage() {
         throw new Error(response.error)
       }
 
-      toast.success("Success", {
-        description: response.message,
-      })
+      if(response.success) {
+        toast.success('Completed Event Succesfully', {
+          description: response.message
+        })
+      }
 
       loadEventData()
     } catch (error: any) {
