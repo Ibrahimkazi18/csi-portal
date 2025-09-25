@@ -133,8 +133,7 @@ export default function SignupPage() {
                     className="w-full glow-purple" 
                     disabled={loading}
                   >
-                    {loading ? 'Signing in...' : 'Sign In as Core Team'}
-                    Sign Up
+                    {loading ? 'Signing up...' : 'Sign Up'}
                   </Button>
                 </form>
               </TabsContent>

@@ -42,6 +42,7 @@ export async function updateSession(request: NextRequest) {
   if (
     path.startsWith('/login') ||
     path.startsWith('/signup') ||
+    path.startsWith('/pending-verification') ||
     path.startsWith('/auth') ||
     path === '/favicon.ico' ||
     path.startsWith('/_next') ||  
