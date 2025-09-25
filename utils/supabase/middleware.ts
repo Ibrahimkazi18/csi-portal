@@ -41,6 +41,7 @@ export async function updateSession(request: NextRequest) {
 
   if (
     path.startsWith('/login') ||
+    path.startsWith('/signup') ||
     path.startsWith('/auth') ||
     path === '/favicon.ico' ||
     path.startsWith('/_next') ||  
@@ -56,6 +57,7 @@ export async function updateSession(request: NextRequest) {
   if (
     !user &&
     !request.nextUrl.pathname.startsWith('/login') &&
+
     !request.nextUrl.pathname.startsWith('/auth')
   ) {
     // no user, potentially respond by redirecting the user to the login page

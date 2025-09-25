@@ -8,13 +8,17 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Computer, Users } from 'lucide-react';
 import { login } from '../actions'
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setloading] = useState(false);
   const [activeTab, setActiveTab] = useState<'member' | 'core-team'>('member');
+  const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
+    setloading(true);
     e.preventDefault();
     const data = {email, password};
     try {
@@ -22,7 +26,13 @@ export default function LoginPage() {
       login(data);
     } catch (error) {
       console.error('Login failed:', error);
+    } finally {
+      setloading(false);
     }
+  };
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    router.push('/signup')
   };
 
   return (
@@ -36,11 +46,17 @@ export default function LoginPage() {
 
         <Card className="bg-dark-surface border-border glow-blue">
           <CardHeader>
-            <CardTitle>Welcome Back</CardTitle>
+            <CardTitle className='text-center'>Welcome Back</CardTitle>
             <CardDescription>Choose your account type and sign in</CardDescription>
+            <p className="text-muted-foreground text-sm">
+              Did not sign up?{" "}
+              <span onClick={handleSignUp} className="text-neon-blue hover:underline cursor-pointer font-medium">
+                Sign Up
+              </span>
+            </p>
           </CardHeader>
           <CardContent>
-            <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'member' | 'core-team')}>
+            <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "member" | "core-team")}>
               <TabsList className="grid w-full grid-cols-2 mb-6">
                 <TabsTrigger value="member" className="flex items-center gap-2">
                   <Computer className="h-4 w-4" />
@@ -77,12 +93,8 @@ export default function LoginPage() {
                       className="bg-input border-border"
                     />
                   </div>
-                  <Button 
-                    type="submit" 
-                    className="w-full glow-blue" 
-                    // disabled={loading}
-                  >
-                    {/* {loading ? 'Signing in...' : 'Sign In as Member'} */}Sign In
+                  <Button type="submit" className="w-full glow-blue" disabled={loading}>
+                    {loading ? "Signing in..." : "Sign In as Member"}
                   </Button>
                 </form>
               </TabsContent>
@@ -112,14 +124,8 @@ export default function LoginPage() {
                       className="bg-input border-border"
                     />
                   </div>
-                  <Button 
-                    type="submit" 
-                    variant="secondary"
-                    className="w-full glow-purple" 
-                    // disabled={loading}
-                  >
-                    {/* {loading ? 'Signing in...' : 'Sign In as Core Team'} */}
-                    Sign In
+                  <Button type="submit" variant="secondary" className="w-full glow-purple" disabled={loading}>
+                    {loading ? "Signing in..." : "Sign In as Core Team"}
                   </Button>
                 </form>
               </TabsContent>

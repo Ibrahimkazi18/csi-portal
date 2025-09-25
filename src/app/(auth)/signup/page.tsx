@@ -8,13 +8,16 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Computer, Users } from 'lucide-react';
 import { signup } from '../actions'
-
+import { useRouter } from 'next/navigation';
 export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setloading] = useState(false);
   const [activeTab, setActiveTab] = useState<'member' | 'core-team'>('member');
+  const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
+    setloading(true);
     e.preventDefault();
     const data = {email, password};
     try {
@@ -22,7 +25,13 @@ export default function SignupPage() {
       signup(data);
     } catch (error) {
       console.error('Signup failed:', error);
+    } finally {
+      setloading(false);
     }
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    router.push('/login')
   };
 
   return (
@@ -36,8 +45,14 @@ export default function SignupPage() {
 
         <Card className="bg-dark-surface border-border glow-blue">
           <CardHeader>
-            <CardTitle>Welcome To CSI Portal</CardTitle>
-            <CardDescription>Choose your account type and sign up</CardDescription>
+            <CardTitle className='text-center'>Welcome Back</CardTitle>
+            <CardDescription>Choose your account type and sign in</CardDescription>
+            <p className="text-muted-foreground text-sm">
+              Already signed up?{" "}
+              <span onClick={handleLogin} className="text-neon-blue hover:underline cursor-pointer font-medium">
+                Log In
+              </span>
+            </p>
           </CardHeader>
           <CardContent>
             <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'member' | 'core-team')}>
@@ -80,9 +95,9 @@ export default function SignupPage() {
                   <Button 
                     type="submit" 
                     className="w-full glow-blue" 
-                    // disabled={loading}
+                    disabled={loading}
                   >
-                    {/* {loading ? 'Signing in...' : 'Sign In as Member'} */}Sign Up
+                    {loading ? 'Signing in...' : 'Sign In as Member'}
                   </Button>
                 </form>
               </TabsContent>
@@ -116,9 +131,9 @@ export default function SignupPage() {
                     type="submit" 
                     variant="secondary"
                     className="w-full glow-purple" 
-                    // disabled={loading}
+                    disabled={loading}
                   >
-                    {/* {loading ? 'Signing in...' : 'Sign In as Core Team'} */}
+                    {loading ? 'Signing in...' : 'Sign In as Core Team'}
                     Sign Up
                   </Button>
                 </form>
