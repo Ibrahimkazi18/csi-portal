@@ -13,7 +13,13 @@ import { toast } from "sonner"
 import { AddMemberModal } from "./components/add-member-modal"
 import { EditMemberModal } from "./components/edit-member-modal"
 import { DeleteMemberDialog } from "./components/delete-member-modal"
-
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 export default function MembersPage() {
   const [members, setMembers] = useState<any[]>([])
@@ -116,15 +122,18 @@ export default function MembersPage() {
                 className="pl-10 bg-input border-border"
               />
             </div>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as "full_name" | "role" | "created_at")}
-              className="px-3 py-2 bg-input border border-border rounded-md text-foreground"
-            >
-              <option value="full_name">Sort by Name</option>
-              <option value="role">Sort by Role</option>
-              <option value="created_at">Sort by Join Date</option>
-            </select>
+            <Select value={sortBy} onValueChange={(value) =>
+              setSortBy(value as "full_name" | "role" | "created_at")
+            }>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="full_name">Sort by Name</SelectItem>
+                <SelectItem value="role">Sort by Role</SelectItem>
+                <SelectItem value="created_at">Sort by Join Date</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="flex gap-2">
             <Button

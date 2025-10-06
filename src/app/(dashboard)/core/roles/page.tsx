@@ -19,6 +19,18 @@ export default function RolesPage() {
   const [roleColors, setRoleColors] = useState<{name : string, color_class: string}[]>([]);
   const [profileUser, setProfileUser] = useState<any>(null);
 
+  const roleOrder: Record<string, number> = {
+    president: 1,
+    secretary: 2,
+    treasurer: 3,
+    technicals: 4,
+    "social media": 5,
+    documentation: 6,
+    creatives: 7,
+    none: 8,
+  };
+
+
   const fetchAllMembersAndRoles = useCallback(async () => {
     setLoadingData(true);
 
@@ -107,6 +119,25 @@ export default function RolesPage() {
     return members.filter(member => member.member_role.toLowerCase() === role.toLowerCase()).length;
   };
 
+  const sortedMembers = [...members].sort((a, b) => {
+    const roleA = a.member_role?.toLowerCase() || "none";
+    const roleB = b.member_role?.toLowerCase() || "none";
+
+    const orderA = roleOrder[roleA] ?? 999;
+    const orderB = roleOrder[roleB] ?? 999;
+
+    // Sort by role priority
+    if (orderA !== orderB) return orderA - orderB;
+
+    // Sort by join date (earlier first)
+    const dateA = new Date(a.created_at).getTime();
+    const dateB = new Date(b.created_at).getTime();
+    if (dateA !== dateB) return dateA - dateB;
+
+    // If same date, sort alphabetically by name
+    return a.full_name.localeCompare(b.full_name);
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -174,7 +205,7 @@ export default function RolesPage() {
                   </TableHeader>
 
                   <TableBody>
-                    {members.map((member) => (
+                    {sortedMembers.map((member) => (
                       <TableRow key={member.id} className="border-border">
                         <TableCell className="font-medium">{member.full_name}</TableCell>
                         <TableCell>{member.email}</TableCell>
