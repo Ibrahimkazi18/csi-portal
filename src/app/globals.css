@@ -44,10 +44,10 @@
 }
 
 :root {
-  --radius: 0.625rem;
+  --radius: 0.5rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.13 0.028 261.692);
-  --card: oklch(1 0 0);
+  --card: oklch(0.99 0.001 264.542);
   --card-foreground: oklch(0.13 0.028 261.692);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.13 0.028 261.692);
@@ -76,45 +76,40 @@
   --sidebar-accent-foreground: oklch(0.21 0.034 264.665);
   --sidebar-border: oklch(0.928 0.006 264.531);
   --sidebar-ring: oklch(0.707 0.022 261.325);
-
-  --neon-blue: 190 100% 60%;
-  --neon-blue-glow: 190 100% 50%;
-  --lavender: 270 50% 70%;
-  --purple-accent: 280 60% 75%;
 }
 
 .dark {
-  --background: oklch(0.13 0.028 261.692);
+  --background: oklch(0.09 0.005 264.542);
   --foreground: oklch(0.985 0.002 247.839);
-  --card: oklch(0.21 0.034 264.665);
+  --card: oklch(0.13 0.015 264.542);
   --card-foreground: oklch(0.985 0.002 247.839);
-  --popover: oklch(0.21 0.034 264.665);
+  --popover: oklch(0.13 0.015 264.542);
   --popover-foreground: oklch(0.985 0.002 247.839);
-  --primary: oklch(0.928 0.006 264.531);
-  --primary-foreground: oklch(0.21 0.034 264.665);
-  --secondary: oklch(0.278 0.033 256.848);
+  --primary: oklch(0.707 0.022 261.325);
+  --primary-foreground: oklch(0.09 0.005 264.542);
+  --secondary: oklch(0.18 0.02 264.542);
   --secondary-foreground: oklch(0.985 0.002 247.839);
-  --muted: oklch(0.278 0.033 256.848);
-  --muted-foreground: oklch(0.707 0.022 261.325);
-  --accent: oklch(0.278 0.033 256.848);
+  --muted: oklch(0.18 0.02 264.542);
+  --muted-foreground: oklch(0.65 0.015 264.364);
+  --accent: oklch(0.18 0.02 264.542);
   --accent-foreground: oklch(0.985 0.002 247.839);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
+  --border: oklch(0.25 0.02 264.542);
+  --input: oklch(0.25 0.02 264.542);
+  --ring: oklch(0.707 0.022 261.325);
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.21 0.034 264.665);
+  --sidebar: oklch(0.13 0.015 264.542);
   --sidebar-foreground: oklch(0.985 0.002 247.839);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0.002 247.839);
-  --sidebar-accent: oklch(0.278 0.033 256.848);
+  --sidebar-primary: oklch(0.707 0.022 261.325);
+  --sidebar-primary-foreground: oklch(0.09 0.005 264.542);
+  --sidebar-accent: oklch(0.18 0.02 264.542);
   --sidebar-accent-foreground: oklch(0.985 0.002 247.839);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.551 0.027 264.364);
+  --sidebar-border: oklch(0.25 0.02 264.542);
+  --sidebar-ring: oklch(0.707 0.022 261.325);
 }
 
 @layer base {
@@ -122,49 +117,29 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
   }
 }
 
-@layer components {
-  /* Glow effects for neon UI elements */
-  .glow-blue {
-    box-shadow: 0 0 20px hsl(var(--neon-blue) / 0.3);
-    transition: all 0.3s ease;
+@layer utilities {
+  .line-clamp-1 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
   }
   
-  .glow-blue:hover {
-    box-shadow: 0 0 30px hsl(var(--neon-blue) / 0.5);
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
   }
   
-  .glow-purple {
-    box-shadow: 0 0 20px hsl(var(--lavender) / 0.3);
-    transition: all 0.3s ease;
-  }
-  
-  .glow-purple:hover {
-    box-shadow: 0 0 30px hsl(var(--lavender) / 0.5);
-  }
-  
-  .text-neon {
-    color: hsl(var(--neon-blue));
-    text-shadow: 0 0 10px hsl(var(--neon-blue) / 0.5);
-  }
-  
-  .text-lavender {
-    color: hsl(var(--lavender));
-    text-shadow: 0 0 10px hsl(var(--lavender) / 0.3);
-  }
-  
-  .border-neon {
-    border-color: hsl(var(--neon-blue));
-  }
-  
-  .bg-dark-surface {
-    background-color: hsl(var(--dark-surface));
-  }
-  
-  .bg-darker-surface {
-    background-color: hsl(var(--darker-surface));
+  .line-clamp-3 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
   }
 }

@@ -2,6 +2,18 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function updateSession(request: NextRequest) {
+  const path = request.nextUrl.pathname
+
+  // Skip middleware for static files and API routes
+  if (
+    path.startsWith('/_next') ||
+    path.startsWith('/api') ||
+    path === '/favicon.ico' ||
+    path.includes('.')
+  ) {
+    return NextResponse.next()
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   })
@@ -27,79 +39,50 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  // Do not run code between createServerClient and
-  // supabase.auth.getUser(). A simple mistake could make it very hard to debug
-  // issues with users being randomly logged out.
-
-  // IMPORTANT: DO NOT REMOVE auth.getUser()
-
+  // Get user session
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const path = request.nextUrl.pathname
-
+  // Allow access to auth pages and root
   if (
     path.startsWith('/login') ||
     path.startsWith('/signup') ||
     path.startsWith('/pending-verification') ||
     path.startsWith('/auth') ||
-    path === '/favicon.ico' ||
-    path.startsWith('/_next') ||  
-    path.startsWith('/api')     
+    path === '/'
   ) {
-    return NextResponse.next()
+    return supabaseResponse
   }
 
+  // Redirect unauthenticated users to login
   if (!user) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  if (
-    !user &&
-    !request.nextUrl.pathname.startsWith('/login') &&
+  // Only fetch profile for protected routes that need role checking
+  if (path.startsWith('/core') || path.startsWith('/member')) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
 
-    !request.nextUrl.pathname.startsWith('/auth')
-  ) {
-    // no user, potentially respond by redirecting the user to the login page
-    const url = request.nextUrl.clone()
-    url.pathname = '/login'
-    return NextResponse.redirect(url)
+    if (!profile) {
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
+
+    const role = profile.role
+
+    // Role-based access control
+    if (path.startsWith('/core') && role !== 'core') {
+      return NextResponse.redirect(new URL('/member', request.url))
+    }
+
+    if (path.startsWith('/member') && role !== 'member') {
+      return NextResponse.redirect(new URL('/core', request.url))
+    }
   }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile) {
-    return NextResponse.redirect(new URL('/login', request.url))
-  }
-
-  const role = profile.role
-
-  // Access Control Logic
-  if (path.startsWith('/core') && role !== 'core') {
-    return NextResponse.redirect(new URL('/member', request.url))
-  }
-
-  if (path.startsWith('/member') && role !== 'member') {
-    return NextResponse.redirect(new URL('/core', request.url))
-  }
-
-  // IMPORTANT: You *must* return the supabaseResponse object as it is.
-  // If you're creating a new response object with NextResponse.next() make sure to:
-  // 1. Pass the request in it, like so:
-  //    const myNewResponse = NextResponse.next({ request })
-  // 2. Copy over the cookies, like so:
-  //    myNewResponse.cookies.setAll(supabaseResponse.cookies.getAll())
-  // 3. Change the myNewResponse object to fit your needs, but avoid changing
-  //    the cookies!
-  // 4. Finally:
-  //    return myNewResponse
-  // If this is not done, you may be causing the browser and server to go out
-  // of sync and terminate the user's session prematurely!
 
   return supabaseResponse
 }
