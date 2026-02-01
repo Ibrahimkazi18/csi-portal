@@ -12,6 +12,7 @@ function generateSecret(len = 32) {
 
 /**
  * Used to display the live event management board
+ * Handles both regular events (using event_registrations) and manual events (using event_participants)
  */
 export async function getLiveEventData(eventId: string) {
   const supabase = await createClient()
@@ -42,30 +43,92 @@ export async function getLiveEventData(eventId: string) {
     return { success: false, error: "Failed to fetch rounds" }
   }
 
-  // Get all registered teams
-  const { data: registrations, error: regError } = await supabase
-    .from("event_registrations")
-    .select(`
-      id,
-      team_id,
-      user_id,
-      registration_type,
-      teams(
-        id,
-        name,
-        leader_id,
-        team_members(
-          member_id,
-          profiles(full_name, email)
-        )
-      ),
-      profiles(full_name, email)
-    `)
-    .eq("event_id", eventId)
-    .eq("status", "registered")
+  let registrations: any[] = []
 
-  if (regError) {
-    return { success: false, error: "Failed to fetch registrations" }
+  // Check if this is a manual event
+  if (event.source === 'manual') {
+    // For manual events, get participants from event_participants table
+    try {
+      const { data: participants, error: participantsError } = await supabase
+        .from("event_participants")
+        .select("*")
+        .eq("event_id", eventId)
+
+      if (participantsError) {
+        console.warn("Failed to fetch event_participants, falling back to event_registrations:", participantsError)
+      } else if (participants) {
+        // Convert event_participants to registration format
+        registrations = participants.map((p: any) => ({
+          id: p.id,
+          team_id: null,
+          user_id: p.user_id,
+          registration_type: 'individual',
+          profiles: {
+            full_name: p.name,
+            email: p.email
+          }
+        }))
+      }
+
+      // Also get teams if it's a team event
+      if (event.type === 'team') {
+        const { data: teams, error: teamsError } = await supabase
+          .from("teams")
+          .select(`
+            id,
+            name,
+            leader_id,
+            team_members(
+              member_id,
+              profiles(full_name, email)
+            )
+          `)
+          .eq("event_id", eventId)
+
+        if (!teamsError && teams) {
+          const teamRegistrations = teams.map((team: any) => ({
+            id: `team-${team.id}`,
+            team_id: team.id,
+            user_id: null,
+            registration_type: 'team',
+            teams: team
+          }))
+          registrations = [...registrations, ...teamRegistrations]
+        }
+      }
+    } catch (error) {
+      console.warn("Error fetching manual event participants:", error)
+    }
+  }
+
+  // If no registrations found (or not a manual event), fall back to event_registrations
+  if (registrations.length === 0) {
+    const { data: regData, error: regError } = await supabase
+      .from("event_registrations")
+      .select(`
+        id,
+        team_id,
+        user_id,
+        registration_type,
+        teams(
+          id,
+          name,
+          leader_id,
+          team_members(
+            member_id,
+            profiles(full_name, email)
+          )
+        ),
+        profiles(full_name, email)
+      `)
+      .eq("event_id", eventId)
+      .eq("status", "registered")
+
+    if (regError) {
+      return { success: false, error: "Failed to fetch registrations" }
+    }
+
+    registrations = regData || []
   }
 
   // Get current event progress
@@ -118,6 +181,7 @@ export async function getLiveEventData(eventId: string) {
 /**
  * Move a team/participant to the next round
  * Creates new progress entry and removes old one
+ * Handles both regular events and manual events
  */
 export async function moveToNextRound({
   eventId,
@@ -162,6 +226,15 @@ export async function moveToNextRound({
       .match({
         event_id: eventId,
         round_id: fromRoundId,
+        ...(teamId ? { team_id: teamId } : { user_id: userId }),
+      })
+  } else {
+    // If moving from unassigned, also remove any existing progress entries
+    await supabase
+      .from("event_progress")
+      .delete()
+      .match({
+        event_id: eventId,
         ...(teamId ? { team_id: teamId } : { user_id: userId }),
       })
   }
