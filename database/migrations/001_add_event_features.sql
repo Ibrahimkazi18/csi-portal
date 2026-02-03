@@ -34,6 +34,8 @@ CREATE TABLE IF NOT EXISTS public.workshop_hosts (
     name text NOT NULL,
     designation text NULL,
     organization text NULL,
+    bio text NULL,
+    photo_url text NULL,
     profile_id uuid REFERENCES profiles(id) NULL, -- Link to existing profile if available
     created_at timestamptz DEFAULT now()
 );

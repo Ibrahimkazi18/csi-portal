@@ -4,12 +4,12 @@ import { useState, useEffect } from "react"
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, useDraggable, useDroppable } from '@dnd-kit/core'
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { 
-  Users, User, Trophy, Target, Crown, Medal, Award, X, 
-  CheckCircle, AlertTriangle, ChevronRight, Play, RotateCcw
+  Users, User, Trophy, Target, Crown, X, 
+  CheckCircle, Play, RotateCcw
 } from "lucide-react"
 import { toast } from "sonner"
 import {
@@ -43,7 +43,6 @@ interface LiveEventProgressionProps {
   onResetProgress: () => Promise<void>
   isCompleting: boolean
   isResetting: boolean
-  movingParticipant: string | null
 }
 
 interface ProgressParticipant {
@@ -58,6 +57,8 @@ interface ProgressParticipant {
   teams?: any
   profiles?: any
   progress?: any
+  winner?: any
+  eliminated?: boolean
 }
 
 export function LiveEventProgression({
@@ -68,8 +69,7 @@ export function LiveEventProgression({
   onCompleteEvent,
   onResetProgress,
   isCompleting,
-  isResetting,
-  movingParticipant
+  isResetting
 }: LiveEventProgressionProps) {
   const [activeId, setActiveId] = useState<string | null>(null)
   const [winnersDialogOpen, setWinnersDialogOpen] = useState(false)
@@ -218,6 +218,12 @@ export function LiveEventProgression({
         return
       }
 
+      console.log('Moving participant:', {
+        participantId,
+        targetColumnId,
+        participant: participant.team_name || participant.user_name
+      })
+
       // Calculate new state values (local state update first for smooth UI)
       let newUnassigned = unassigned.filter(p => p.id !== participantId)
       let newEliminated = eliminated.filter(p => p.id !== participantId)
@@ -256,7 +262,7 @@ export function LiveEventProgression({
       setWinners(newWinners)
       setRoundColumns(newRoundColumns)
 
-      // Now make the server call in the background
+      // Now make the server call in the background (don't await to keep UI smooth)
       if (targetColumnId === 'eliminated') {
         // Find current round for elimination
         const currentProgress = progress.find((p: any) =>
@@ -265,12 +271,18 @@ export function LiveEventProgression({
         )
         const currentRoundId = currentProgress?.round_id
         if (currentRoundId) {
-          await onEliminateParticipant(participant, currentRoundId)
+          onEliminateParticipant(participant, currentRoundId).catch(error => {
+            console.error('Background server call failed:', error)
+            // Don't show error to user since UI already updated
+          })
         }
       } else {
         // Move to specific round or unassigned
         const targetRoundId = targetColumnId === 'unassigned' ? null : targetColumnId
-        await onMoveParticipant(participant, targetRoundId)
+        onMoveParticipant(participant, targetRoundId).catch(error => {
+          console.error('Background server call failed:', error)
+          // Don't show error to user since UI already updated
+        })
       }
 
     } catch (error) {

@@ -53,7 +53,6 @@ export default function LiveEventPage() {
   const [eventData, setEventData] = useState<any>(null)
   const [isCompleting, setIsCompleting] = useState(false)
   const [isResetting, setIsResetting] = useState(false)
-  const [movingParticipant, setMovingParticipant] = useState<string | null>(null)
 
   const loadEventData = useCallback(async () => {
     setLoading(true)
@@ -269,7 +268,6 @@ export default function LiveEventPage() {
         onResetProgress={handleResetProgress}
         isCompleting={isCompleting}
         isResetting={isResetting}
-        movingParticipant={movingParticipant}
       />
     </div>
   )

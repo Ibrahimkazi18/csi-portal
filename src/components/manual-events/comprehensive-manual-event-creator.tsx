@@ -203,7 +203,7 @@ export function ComprehensiveManualEventCreator({ eventId, onComplete }: ManualE
               .filter(r => r.registration_type === 'team' && r.teams)
               .map(r => ({
                 name: r.teams.name,
-                members: r.teams.team_members?.map(tm => ({
+                members: r.teams.team_members?.map((tm: any) => ({
                   email: tm.profiles?.email || '',
                   name: tm.profiles?.full_name || '',
                   role: 'Student'
@@ -455,7 +455,7 @@ export function ComprehensiveManualEventCreator({ eventId, onComplete }: ManualE
         return
       }
 
-      if (result.message) {
+      if ('message' in result && result.message) {
         toast.success(result.message)
       }
 

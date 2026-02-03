@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Calendar, Users, Trophy, Megaphone, ArrowRight } from "lucide-react"
+import { Calendar, Users, Trophy, Megaphone, ArrowRight, GraduationCap } from "lucide-react"
 import Link from "next/link"
 
 interface QuickAction {
@@ -21,6 +21,12 @@ export function QuickActions({ role }: QuickActionsProps) {
       description: "Add a new event for members to join",
       href: "/core/events/create",
       icon: Calendar
+    },
+    {
+      title: "Create Workshop",
+      description: "Set up educational workshops and seminars",
+      href: "/core/workshops/create",
+      icon: GraduationCap
     },
     {
       title: "Manage Members",
@@ -48,6 +54,12 @@ export function QuickActions({ role }: QuickActionsProps) {
       description: "Find and register for upcoming events",
       href: "/member/events",
       icon: Calendar
+    },
+    {
+      title: "Browse Workshops",
+      description: "Join educational workshops and seminars",
+      href: "/member/workshops",
+      icon: GraduationCap
     },
     {
       title: "View Profile",

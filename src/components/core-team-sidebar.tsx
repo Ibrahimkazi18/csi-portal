@@ -1,6 +1,6 @@
 "use client"
 
-import { Users, Calendar, Trophy, BookOpen, Shield, LogOut, Megaphone, X, Settings } from 'lucide-react'
+import { Users, Calendar, Trophy, BookOpen, Shield, LogOut, Megaphone, X, Settings, GraduationCap } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -25,6 +25,11 @@ const sidebarItems = [
     title: "Manual Events",
     icon: Settings,
     path: "/core/events/manual",
+  },
+  {
+    title: "Workshops",
+    icon: GraduationCap,
+    path: "/core/workshops",
   },
   {
     title: "Tournament",
