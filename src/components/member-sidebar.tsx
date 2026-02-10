@@ -1,6 +1,6 @@
 "use client"
 
-import { User, Calendar, BookOpen, LogOut, Megaphone, Trophy, X, GraduationCap } from 'lucide-react'
+import { User, Calendar, BookOpen, LogOut, Megaphone, Trophy, X, GraduationCap, Home } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -11,6 +11,11 @@ import { ThemeToggle } from "./ui/theme-toggler"
 import { cn } from "@/lib/utils"
 
 const sidebarItems = [
+  {
+    title: "Dashboard",
+    icon: Home,
+    path: "/member/dashboard",
+  },
   {
     title: "My Profile",
     icon: User,

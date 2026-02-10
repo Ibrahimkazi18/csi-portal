@@ -26,7 +26,7 @@ export default function WorkshopsPage() {
     setLoading(true)
     const response = await getWorkshops()
     
-    if (response.success) {
+    if (response.success && response.data) {
       setWorkshops(response.data.workshops)
     } else {
       toast.error("Failed to load workshops")

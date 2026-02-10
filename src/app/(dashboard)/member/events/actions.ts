@@ -4,6 +4,47 @@ import { PostgrestError } from "@supabase/supabase-js"
 import { createClient } from "../../../../../utils/supabase/server"
 import { revalidatePath } from "next/cache"
 
+// Debug function to check team member data
+export async function debugTeamMembers(eventId: string) {
+  const supabase = await createClient()
+  
+  console.log("=== DEBUG: Checking team member data ===")
+  
+  // Check event registrations
+  const { data: registrations, error: regError } = await supabase
+    .from("event_registrations")
+    .select("*")
+    .eq("event_id", eventId)
+  
+  console.log("Raw registrations:", registrations)
+  console.log("Registration error:", regError)
+  
+  // Check teams separately
+  if (registrations) {
+    for (const reg of registrations) {
+      if (reg.team_id) {
+        const { data: team, error: teamError } = await supabase
+          .from("teams")
+          .select(`
+            id,
+            name,
+            team_members(
+              member_id,
+              profiles(full_name, email)
+            )
+          `)
+          .eq("id", reg.team_id)
+          .single()
+        
+        console.log(`Team ${reg.team_id}:`, team)
+        console.log(`Team error:`, teamError)
+      }
+    }
+  }
+  
+  return { registrations, regError }
+}
+
 // Event rounds
 export async function getEventRounds(event_id: string) {
   const supabase = await createClient()
@@ -286,7 +327,7 @@ export async function createTeam(
       name: teamName,
       leader_id: user.id,
       is_tournament: event.is_tournament,
-      description: `Team for event ${eventId}`,
+      description: `Team for ${event.title}`,
       event_id: event.id
     })
     .select()
@@ -366,6 +407,28 @@ export async function respondToInvitation(invitationId: string, accept: boolean)
     .eq("id", invitationId);
 
   if (updateError) throw new Error("Failed to update invitation");
+
+  // Step 2.5: Create notification for team leader
+  const { data: invitationDetails } = await supabase
+    .from("team_invitations")
+    .select(`
+      team_id,
+      inviter_id,
+      invitee_id,
+      teams(name),
+      invitee:profiles!invitee_id(full_name)
+    `)
+    .eq("id", invitationId)
+    .single();
+
+  if (invitationDetails) {
+    await supabase.from("notifications").insert({
+      recipient_id: invitationDetails.inviter_id,
+      title: accept ? "Invitation Accepted" : "Invitation Declined",
+      message: `${(invitationDetails.invitee as any)?.full_name} has ${accept ? 'accepted' : 'declined'} your invitation to join ${(invitationDetails.teams as any)?.name}`,
+      type: "team"
+    });
+  }
 
   // Step 3: If accepted, add user to team_members
   if (accept) {
@@ -715,21 +778,21 @@ export async function applyToTeam(teamId: string, eventId: string): Promise<{ me
     return { message : "Error"}
   }
 
-  const { data: registraion, error: regError } = await supabase
+  const { data: registration, error: regError } = await supabase
     .from("event_registrations")
     .select("*")
     .eq("team_id", teamId)
 
   if (regError) {
-    console.error(teamError)
-    throw new Error("Reg error")
+    console.error(regError)
+    throw new Error("Registration check error")
   }
-  if (!registraion) {
-    console.error("team not found")
+  if (!registration) {
+    console.error("registration not found")
     return { message : "Error"}
   }
 
-  if (registraion.length > 0) throw new Error("Team already registered")
+  if (registration.length > 0) throw new Error("Team already registered")
 
   const { error } = await supabase
     .from("team_applications")
@@ -770,6 +833,28 @@ export async function respondToApplication(applicationId: string, accept: boolea
     .eq("id", applicationId)
 
   if (updateError) throw new Error("Failed to update application")
+
+  // Step 2.5: Create notification for applicant
+  const { data: applicationDetails } = await supabase
+    .from("team_applications")
+    .select(`
+      team_id,
+      user_id,
+      teams(name)
+    `)
+    .eq("id", applicationId)
+    .single();
+
+  if (applicationDetails) {
+    await supabase.from("notifications").insert({
+      recipient_id: applicationDetails.user_id,
+      title: accept ? "Application Accepted!" : "Application Declined",
+      message: accept
+        ? `You have been accepted to join ${(applicationDetails.teams as any)?.name}!`
+        : `Your application to join ${(applicationDetails.teams as any)?.name} was not accepted. You can apply to other teams.`,
+      type: "team"
+    });
+  }
 
   // Step 3: If accepted, add user to team_members
   if (accept) {

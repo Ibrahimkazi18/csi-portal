@@ -160,7 +160,7 @@ export default function EventDetailsPage() {
   const handleApplyToTeam = async (teamId: string) => {
     setApplyingToTeam(teamId)
     try {
-      const response = await applyToTeam(teamId, event.id)
+      const response = await applyToTeam(teamId, eventId)
       toast.success("Application Sent", {
         description: response.message,
       })
@@ -485,7 +485,7 @@ export default function EventDetailsPage() {
                     >
                       <div className="flex items-start justify-between mb-3">
                         <div>
-                          <h4 className="font-medium">{application.teams.name}</h4>
+                          <h4 className="font-medium">{application.teams?.name}</h4>
                           <p className="text-sm text-muted-foreground">
                             Raised By{" "}
                             <span className="font-medium">{application.teams.profiles?.full_name || "Team Leader"}</span>
@@ -501,7 +501,7 @@ export default function EventDetailsPage() {
                         <div className="flex flex-wrap gap-2">
                           {application.teams.team_members?.map((member: any, index: number) => (
                             <Badge key={index} variant="secondary" className="text-xs">
-                              {member.profiles?.full_name}
+                              {member?.full_name}
                             </Badge>
                           ))}
                         </div>
@@ -565,7 +565,7 @@ export default function EventDetailsPage() {
                           <div className="flex flex-wrap gap-2">
                             {registration.teams?.team_members?.map((member: any, index: number) => (
                               <Badge key={index} variant="secondary" className="text-xs">
-                                {member.profiles?.full_name}
+                                {member?.full_name}
                               </Badge>
                             ))}
                           </div>
