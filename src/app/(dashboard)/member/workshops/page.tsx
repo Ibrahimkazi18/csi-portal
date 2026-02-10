@@ -29,11 +29,11 @@ export default function MemberWorkshopsPage() {
       getMyWorkshops()
     ])
 
-    if (available.success) {
+    if (available.success && available.data) {
       setAvailableWorkshops(available.data.workshops)
     }
 
-    if (mine.success) {
+    if (mine.success && mine.data) {
       setMyWorkshops(mine.data.workshops)
     }
 
