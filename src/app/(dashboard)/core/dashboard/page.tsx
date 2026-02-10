@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
   Users, Calendar, MessageSquare, GraduationCap,
-  Plus, TrendingUp, CheckCircle, Clock, AlertCircle
+  Plus, CheckCircle, Clock
 } from "lucide-react"
 import Link from "next/link"
 import * as dashboardActions from "./actions"
@@ -42,10 +42,10 @@ export default function CoreDashboardPage() {
         dashboardActions.getRecentQueries()
       ])
 
-      if (statsRes.success) setStats(statsRes.data)
-      if (activityRes.success) setActivity(activityRes.data)
-      if (eventsRes.success) setUpcomingEvents(eventsRes.data)
-      if (queriesRes.success) setRecentQueries(queriesRes.data)
+      if (statsRes.success && statsRes.data) setStats(statsRes.data)
+      if (activityRes.success && activityRes.data) setActivity(activityRes.data)
+      if (eventsRes.success && eventsRes.data) setUpcomingEvents(eventsRes.data)
+      if (queriesRes.success && queriesRes.data) setRecentQueries(queriesRes.data)
     } catch (error) {
       console.error("Failed to load dashboard:", error)
     }
