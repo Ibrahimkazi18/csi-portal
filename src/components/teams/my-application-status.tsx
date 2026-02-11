@@ -36,7 +36,7 @@ export function MyApplicationStatus({ eventId }: MyApplicationStatusProps) {
       const { getMyApplicationStatus } = await import("./actions")
       const response = await getMyApplicationStatus(eventId)
       
-      if (response.success) {
+      if (response.success && response.data) {
         setApplications(response.data)
       }
     } catch (error) {

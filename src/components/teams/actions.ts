@@ -40,18 +40,23 @@ export async function getTeamInvitationStatus(teamId: string) {
 
   // Mark expired invitations and format data
   const now = new Date()
-  const processedInvitations = invitations.map(inv => ({
-    id: inv.id,
-    invitee_name: inv.profiles?.full_name || "Unknown",
-    invitee_email: inv.profiles?.email || "Unknown",
-    status: inv.status === 'pending' && new Date(inv.expires_at) < now 
-      ? 'expired' 
-      : inv.status,
-    created_at: inv.created_at,
-    responded_at: inv.responded_at,
-    expires_at: inv.expires_at,
-    invitee_id: inv.invitee_id
-  }))
+  const processedInvitations = invitations.map(inv => {
+  const profile = inv.profiles?.[0]
+
+    return {
+      id: inv.id,
+      invitee_name: profile?.full_name ?? "Unknown",
+      invitee_email: profile?.email ?? "Unknown",
+      status:
+        inv.status === "pending" && new Date(inv.expires_at) < now
+          ? "expired"
+          : inv.status,
+      created_at: inv.created_at,
+      responded_at: inv.responded_at,
+      expires_at: inv.expires_at,
+      invitee_id: inv.invitee_id
+    }
+  });
 
   return { success: true, data: processedInvitations }
 }
@@ -158,12 +163,12 @@ export async function getMyApplicationStatus(eventId?: string) {
       created_at,
       team_id,
       event_id,
-      teams(
+      teams!inner(
         name,
         leader_id,
-        profiles:leader_id(full_name, email)
+        profiles!inner(full_name, email)
       ),
-      events(title, start_date)
+      events!inner(title, start_date)
     `)
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
@@ -177,15 +182,21 @@ export async function getMyApplicationStatus(eventId?: string) {
   if (error) return { success: false, error: error.message }
 
   // Format data
-  const formattedData = data.map(app => ({
+  const formattedData = data.map(app => {
+  const team = app.teams?.[0]
+  const leaderProfile = team?.profiles?.[0]
+  const event = app.events?.[0]
+
+  return {
     id: app.id,
-    team_name: app.teams?.name || "Unknown Team",
-    team_leader_name: app.teams?.profiles?.full_name || "Unknown Leader",
-    event_title: app.events?.title || "Unknown Event",
+    team_name: team?.name ?? "Unknown Team",
+    team_leader_name: leaderProfile?.full_name ?? "Unknown Leader",
+    event_title: event?.title ?? "Unknown Event",
     status: app.status,
     created_at: app.created_at,
     event_id: app.event_id
-  }))
+  }
+})
 
   return { success: true, data: formattedData }
 }
