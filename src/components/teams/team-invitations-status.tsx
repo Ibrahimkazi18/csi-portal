@@ -36,7 +36,7 @@ export function TeamInvitationsStatus({ teamId }: TeamInvitationsStatusProps) {
       const { getTeamInvitationStatus } = await import("./actions")
       const response = await getTeamInvitationStatus(teamId)
       
-      if (response.success) {
+      if (response.success && response.data) {
         setInvitations(response.data)
       } else {
         toast.error(response.error)
