@@ -22,7 +22,10 @@ export function BentoGrid({ children, className, ...props }: BentoGridProps) {
   )
 }
 
-interface BentoCardProps extends React.HTMLAttributes<HTMLDivElement> {
+interface BentoCardProps extends Omit<
+  React.HTMLAttributes<HTMLDivElement>, 
+  'onDrag' | 'onDragStart' | 'onDragEnd' | 'onAnimationStart' | 'onAnimationEnd'
+> {
   children: React.ReactNode
   span?: "1" | "2" | "3" | "full"
   rowSpan?: "1" | "2"
