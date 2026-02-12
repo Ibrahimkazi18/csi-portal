@@ -143,3 +143,35 @@ export async function getRecentQueries() {
     return { success: false, error: error.message }
   }
 }
+
+export async function getAllMembers() {
+  const supabase = await createClient()
+  
+  // Verify core member
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: "Not authenticated" }
+  
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single()
+
+  if (!profile || profile.role !== "core") {
+    return { success: false, error: "Unauthorized" }
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, full_name, email, member_role, created_at, is_core_team")
+      .eq("role", "member")
+      .order("created_at", { ascending: false })
+
+    if (error) return { success: false, error: error.message }
+
+    return { success: true, data: data || [] }
+  } catch (error: any) {
+    return { success: false, error: error.message }
+  }
+}

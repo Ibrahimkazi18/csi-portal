@@ -1,16 +1,25 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
   Users, Calendar, MessageSquare, GraduationCap,
-  Plus, CheckCircle, Clock
+  Plus, CheckCircle, Clock, Crown, Mail
 } from "lucide-react"
 import Link from "next/link"
 import * as dashboardActions from "./actions"
 import { BentoGrid, BentoCard, BentoCardHeader, BentoCardTitle, BentoCardContent } from "@/components/ui/bento-grid"
 import { CtaCard, CtaCardHeader, CtaCardTitle, CtaCardContent } from "@/components/ui/cta-card"
+import { NumberedPagination } from "@/components/ui/numbered-pagination"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 
 interface DashboardStats {
   totalEvents: number
@@ -21,11 +30,36 @@ interface DashboardStats {
   completedEvents: number
 }
 
+interface Member {
+  id: string
+  full_name: string
+  email: string
+  member_role: string | null
+  created_at: string
+  is_core_team: boolean
+}
+
+const ITEMS_PER_PAGE = 10
+
+// Role hierarchy for sorting
+const ROLE_ORDER: { [key: string]: number } = {
+  'president': 1,
+  'secretary': 2,
+  'treasurer': 3,
+  'technical': 4,
+  'social media': 5,
+  'documentation': 6,
+  'creative': 7,
+  'none': 8,
+}
+
 export default function CoreDashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [activity, setActivity] = useState<any[]>([])
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([])
   const [recentQueries, setRecentQueries] = useState<any[]>([])
+  const [members, setMembers] = useState<Member[]>([])
+  const [currentPage, setCurrentPage] = useState(1)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -36,23 +70,49 @@ export default function CoreDashboardPage() {
     setLoading(true)
     
     try {
-      const [statsRes, activityRes, eventsRes, queriesRes] = await Promise.all([
+      const [statsRes, activityRes, eventsRes, queriesRes, membersRes] = await Promise.all([
         dashboardActions.getDashboardStats(),
         dashboardActions.getRecentActivity(),
         dashboardActions.getUpcomingEvents(),
-        dashboardActions.getRecentQueries()
+        dashboardActions.getRecentQueries(),
+        dashboardActions.getAllMembers()
       ])
 
       if (statsRes.success && statsRes.data) setStats(statsRes.data)
       if (activityRes.success && activityRes.data) setActivity(activityRes.data)
       if (eventsRes.success && eventsRes.data) setUpcomingEvents(eventsRes.data)
       if (queriesRes.success && queriesRes.data) setRecentQueries(queriesRes.data)
+      if (membersRes.success && membersRes.data) setMembers(membersRes.data)
     } catch (error) {
       console.error("Failed to load dashboard:", error)
     }
     
     setLoading(false)
   }
+
+  // Sort members by role hierarchy
+  const sortedMembers = useMemo(() => {
+    return [...members].sort((a, b) => {
+      const roleA = (a.member_role || 'none').toLowerCase()
+      const roleB = (b.member_role || 'none').toLowerCase()
+      const orderA = ROLE_ORDER[roleA] || 999
+      const orderB = ROLE_ORDER[roleB] || 999
+      
+      if (orderA !== orderB) {
+        return orderA - orderB
+      }
+      
+      // If same role, sort by name
+      return a.full_name.localeCompare(b.full_name)
+    })
+  }, [members])
+
+  // Paginate members
+  const totalPages = Math.ceil(sortedMembers.length / ITEMS_PER_PAGE)
+  const paginatedMembers = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
+    return sortedMembers.slice(startIndex, startIndex + ITEMS_PER_PAGE)
+  }, [sortedMembers, currentPage])
 
   if (loading) return <div className="text-center py-8">Loading dashboard...</div>
 
@@ -237,6 +297,110 @@ export default function CoreDashboardPage() {
           </CtaCardContent>
         </CtaCard>
       )}
+
+      {/* Members Section */}
+      <CtaCard>
+        <CtaCardHeader>
+          <div className="flex items-center gap-2">
+            <Users className="h-5 w-5 text-primary" />
+            <CtaCardTitle>All Members</CtaCardTitle>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">
+              {sortedMembers.length} total members
+            </span>
+            <Link href="/core/members">
+              <Button variant="outline" size="sm">Manage Members</Button>
+            </Link>
+          </div>
+        </CtaCardHeader>
+        <CtaCardContent>
+          <div className="rounded-lg border overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50">
+                  <TableHead className="font-semibold">#</TableHead>
+                  <TableHead className="font-semibold">Name</TableHead>
+                  <TableHead className="font-semibold">Email</TableHead>
+                  <TableHead className="font-semibold">Role</TableHead>
+                  <TableHead className="font-semibold">Status</TableHead>
+                  <TableHead className="font-semibold">Joined</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedMembers.map((member, index) => {
+                  const globalIndex = (currentPage - 1) * ITEMS_PER_PAGE + index + 1
+                  return (
+                    <TableRow key={member.id} className="hover:bg-muted/30 transition-colors">
+                      <TableCell className="font-medium text-muted-foreground">
+                        {globalIndex}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{member.full_name}</span>
+                          {member.is_core_team && (
+                            <Crown className="h-4 w-4 text-yellow-500" />
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Mail className="h-3 w-3" />
+                          {member.email}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant={
+                            member.member_role === 'president' ? 'default' :
+                            member.member_role === 'secretary' ? 'default' :
+                            member.member_role === 'treasurer' ? 'default' :
+                            'secondary'
+                          }
+                          className="capitalize"
+                        >
+                          {member.member_role || 'Member'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-green-600 border-green-600">
+                          Active
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {new Date(member.created_at).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric'
+                        })}
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="mt-6 flex justify-center">
+              <NumberedPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                paginationItemsToDisplay={5}
+                onPageChange={setCurrentPage}
+              />
+            </div>
+          )}
+
+          {sortedMembers.length === 0 && (
+            <div className="text-center py-12 text-muted-foreground">
+              <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>No members found</p>
+            </div>
+          )}
+        </CtaCardContent>
+      </CtaCard>
     </div>
   )
 }

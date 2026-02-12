@@ -2,14 +2,17 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Search, Calendar, Users, Edit, Trash2 } from "lucide-react"
+import { Plus, Search, GraduationCap, RefreshCcw, X, Calendar, Users, CheckCircle } from "lucide-react"
 import { getWorkshops } from "./actions"
 import { CreateWorkshopModal } from "@/components/workshops/create-workshop-modal"
 import { toast } from "sonner"
+import { MorphingCardStack } from "@/components/ui/morphing-card-stack"
+import { WorkshopCardCore } from "@/components/workshops/workshop-card-core"
+import { CtaCard, CtaCardHeader, CtaCardTitle, CtaCardDescription, CtaCardContent } from "@/components/ui/cta-card"
+import { BentoGrid, BentoCard, BentoCardHeader, BentoCardTitle, BentoCardContent } from "@/components/ui/bento-grid"
 
 export default function WorkshopsPage() {
   const [workshops, setWorkshops] = useState<any[]>([])
@@ -36,10 +39,17 @@ export default function WorkshopsPage() {
   }
 
   const filteredWorkshops = workshops.filter(w => {
-    const matchesSearch = w.title.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesSearch = w.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      w.description?.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesStatus = statusFilter === "all" || w.status === statusFilter
     return matchesSearch && matchesStatus
   })
+
+  const upcomingWorkshops = filteredWorkshops.filter(w => 
+    w.status === "upcoming" || w.status === "registration_open"
+  )
+  const ongoingWorkshops = filteredWorkshops.filter(w => w.status === "ongoing")
+  const completedWorkshops = filteredWorkshops.filter(w => w.status === "completed")
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -57,14 +67,19 @@ export default function WorkshopsPage() {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Workshops</h1>
+          <h1 className="text-3xl font-bold">Workshops & Seminars</h1>
           <p className="text-muted-foreground">
-            Manage all workshops and seminars
+            Manage all workshops and educational sessions
           </p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" onClick={loadWorkshops}>
+            <RefreshCcw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
           <Link href="/core/workshops/manual">
             <Button variant="outline">
               <Plus className="h-4 w-4 mr-2" />
@@ -78,68 +93,84 @@ export default function WorkshopsPage() {
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Total Workshops</CardTitle>
-          </CardHeader>
-          <CardContent>
+      {/* Stats Cards - Bento Grid */}
+      <BentoGrid>
+        <BentoCard delay={0}>
+          <BentoCardHeader>
+            <BentoCardTitle className="text-sm font-medium">Total Workshops</BentoCardTitle>
+            <GraduationCap className="h-4 w-4 text-muted-foreground" />
+          </BentoCardHeader>
+          <BentoCardContent>
             <div className="text-2xl font-bold">{workshops.length}</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Upcoming</CardTitle>
-          </CardHeader>
-          <CardContent>
+            <p className="text-xs text-muted-foreground mt-1">All time</p>
+          </BentoCardContent>
+        </BentoCard>
+
+        <BentoCard delay={0.05}>
+          <BentoCardHeader>
+            <BentoCardTitle className="text-sm font-medium">Upcoming</BentoCardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </BentoCardHeader>
+          <BentoCardContent>
             <div className="text-2xl font-bold">
-              {workshops.filter(w => w.status === "upcoming").length}
+              {workshops.filter(w => w.status === "upcoming" || w.status === "registration_open").length}
             </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Ongoing</CardTitle>
-          </CardHeader>
-          <CardContent>
+            <p className="text-xs text-muted-foreground mt-1">Scheduled</p>
+          </BentoCardContent>
+        </BentoCard>
+
+        <BentoCard delay={0.1}>
+          <BentoCardHeader>
+            <BentoCardTitle className="text-sm font-medium">Ongoing</BentoCardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </BentoCardHeader>
+          <BentoCardContent>
             <div className="text-2xl font-bold">
               {workshops.filter(w => w.status === "ongoing").length}
             </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Completed</CardTitle>
-          </CardHeader>
-          <CardContent>
+            <p className="text-xs text-muted-foreground mt-1">In progress</p>
+          </BentoCardContent>
+        </BentoCard>
+
+        <BentoCard delay={0.15}>
+          <BentoCardHeader>
+            <BentoCardTitle className="text-sm font-medium">Completed</BentoCardTitle>
+            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+          </BentoCardHeader>
+          <BentoCardContent>
             <div className="text-2xl font-bold">
               {workshops.filter(w => w.status === "completed").length}
             </div>
-          </CardContent>
-        </Card>
-      </div>
+            <p className="text-xs text-muted-foreground mt-1">Finished</p>
+          </BentoCardContent>
+        </BentoCard>
+      </BentoGrid>
 
-      {/* Filters */}
-      <Card>
-        <CardContent className="p-4">
+      {/* Modern Search Bar */}
+      <CtaCard variant="accent">
+        <CtaCardContent className="p-4">
           <div className="flex gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
               <Input
-                placeholder="Search workshops..."
+                placeholder="Search workshops by title or description..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-10 pr-10 h-12 text-base"
               />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
             </div>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 bg-input border border-border rounded-md"
+              className="px-4 py-2 bg-background border border-border rounded-lg h-12 min-w-[180px]"
             >
               <option value="all">All Status</option>
               <option value="upcoming">Upcoming</option>
@@ -148,78 +179,93 @@ export default function WorkshopsPage() {
               <option value="completed">Completed</option>
             </select>
           </div>
-        </CardContent>
-      </Card>
+          {searchQuery && (
+            <p className="text-sm text-muted-foreground mt-2">
+              Found {filteredWorkshops.length} workshop(s) matching "{searchQuery}"
+            </p>
+          )}
+        </CtaCardContent>
+      </CtaCard>
 
-      {/* Workshop List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredWorkshops.map(workshop => (
-          <Card key={workshop.id} className="hover:shadow-lg transition-shadow">
-            {workshop.banner_url && (
-              <img
-                src={workshop.banner_url}
-                alt={workshop.title}
-                className="w-full h-40 object-cover rounded-t-lg"
-              />
-            )}
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <CardTitle className="text-lg">{workshop.title}</CardTitle>
-                <div className="flex flex-col gap-1">
-                  <Badge variant={getStatusColor(workshop.status)}>
-                    {workshop.status}
-                  </Badge>
-                  {workshop.source === "manual" && (
-                    <Badge variant="outline" className="text-xs">Manual</Badge>
-                  )}
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground line-clamp-2">
-                {workshop.description}
-              </p>
-              
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span>{new Date(workshop.start_date).toLocaleDateString()}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                  <span>
-                    {workshop.registration_count || 0} / {workshop.max_participants} registered
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <Link href={`/core/workshops/${workshop.id}`} className="flex-1">
-                  <Button variant="outline" className="w-full">
-                    View Details
-                  </Button>
-                </Link>
-                {workshop.status !== "completed" && (
-                  <Link href={`/core/workshops/${workshop.id}/edit`}>
-                    <Button variant="outline" size="sm">
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                  </Link>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {filteredWorkshops.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">No workshops found</p>
-          <Button className="mt-4" onClick={() => setShowCreateModal(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Your First Workshop
-          </Button>
+      {/* Upcoming & Registration Open Workshops */}
+      {upcomingWorkshops.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 mb-4">
+            <Calendar className="h-5 w-5 text-primary" />
+            <h2 className="text-xl font-semibold">Upcoming Workshops</h2>
+            <Badge variant="secondary">{upcomingWorkshops.length}</Badge>
+          </div>
+          <MorphingCardStack
+            cards={upcomingWorkshops.map((w: any) => ({
+              id: w.id,
+              title: w.title,
+              description: w.description || "",
+              content: <WorkshopCardCore workshop={w} />
+            }))}
+            defaultLayout="grid"
+          />
         </div>
+      )}
+
+      {/* Ongoing Workshops */}
+      {ongoingWorkshops.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 mb-4">
+            <Users className="h-5 w-5 text-green-500" />
+            <h2 className="text-xl font-semibold">Ongoing Workshops</h2>
+            <Badge variant="default">{ongoingWorkshops.length}</Badge>
+          </div>
+          <MorphingCardStack
+            cards={ongoingWorkshops.map((w: any) => ({
+              id: w.id,
+              title: w.title,
+              description: w.description || "",
+              content: <WorkshopCardCore workshop={w} />
+            }))}
+            defaultLayout="grid"
+          />
+        </div>
+      )}
+
+      {/* Completed Workshops */}
+      {completedWorkshops.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 mb-4">
+            <CheckCircle className="h-5 w-5 text-muted-foreground" />
+            <h2 className="text-xl font-semibold">Completed Workshops</h2>
+            <Badge variant="secondary">{completedWorkshops.length}</Badge>
+          </div>
+          <MorphingCardStack
+            cards={completedWorkshops.map((w: any) => ({
+              id: w.id,
+              title: w.title,
+              description: w.description || "",
+              content: <WorkshopCardCore workshop={w} />
+            }))}
+            defaultLayout="list"
+          />
+        </div>
+      )}
+
+      {/* Empty State */}
+      {filteredWorkshops.length === 0 && !loading && (
+        <CtaCard>
+          <CtaCardContent className="text-center py-12">
+            <GraduationCap className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+            <h3 className="text-lg font-semibold mb-2">No workshops found</h3>
+            <p className="text-muted-foreground mb-4">
+              {searchQuery || statusFilter !== "all"
+                ? "Try adjusting your search or filters"
+                : "Get started by creating your first workshop"}
+            </p>
+            {!searchQuery && statusFilter === "all" && (
+              <Button onClick={() => setShowCreateModal(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Create Your First Workshop
+              </Button>
+            )}
+          </CtaCardContent>
+        </CtaCard>
       )}
 
       {/* Create Workshop Modal */}
