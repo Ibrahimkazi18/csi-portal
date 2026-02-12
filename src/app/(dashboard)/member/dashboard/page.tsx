@@ -1,15 +1,16 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
   Calendar, Users, Trophy, GraduationCap,
-  Bell, CheckCircle, Clock, ArrowRight
+  Bell, ArrowRight
 } from "lucide-react"
 import Link from "next/link"
 import * as dashboardActions from "./actions"
+import { BentoGrid, BentoCard, BentoCardHeader, BentoCardTitle, BentoCardContent } from "@/components/ui/bento-grid"
+import { CtaCard, CtaCardHeader, CtaCardTitle, CtaCardDescription, CtaCardContent } from "@/components/ui/cta-card"
 
 interface MemberDashboardStats {
   eventsParticipated: number
@@ -58,70 +59,84 @@ export default function MemberDashboardPage() {
 
       {/* Pending Actions Alert */}
       {stats && stats.pendingActions > 0 && (
-        <Card className="border-orange-500/50 bg-orange-500/5">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <Bell className="h-5 w-5 text-orange-500" />
-              <div className="flex-1">
-                <p className="font-medium">You have {stats.pendingActions} pending action(s)</p>
-                <p className="text-sm text-muted-foreground">
-                  {stats.pendingInvitations} invitation(s), {stats.pendingApplications} application(s)
-                </p>
-              </div>
-              <Link href="/member/notifications">
-                <Button variant="outline">View All</Button>
-              </Link>
+        <CtaCard variant="accent" className="border-orange-500/50">
+          <div className="flex items-center gap-3">
+            <Bell className="h-5 w-5 text-orange-500" />
+            <div className="flex-1">
+              <p className="font-medium">You have {stats.pendingActions} pending action(s)</p>
+              <p className="text-sm text-muted-foreground">
+                {stats.pendingInvitations} invitation(s), {stats.pendingApplications} application(s)
+              </p>
             </div>
-          </CardContent>
-        </Card>
+            <Link href="/member/notifications">
+              <Button variant="outline">View All</Button>
+            </Link>
+          </div>
+        </CtaCard>
       )}
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Events Participated"
-          value={stats?.eventsParticipated || 0}
-          icon={Calendar}
-          trend="All time"
-        />
-        <StatCard
-          title="Upcoming Events"
-          value={stats?.upcomingEvents || 0}
-          icon={Calendar}
-          trend="Registered"
-        />
-        <StatCard
-          title="Workshops Attended"
-          value={stats?.workshopsAttended || 0}
-          icon={GraduationCap}
-          trend="Completed"
-        />
-        <StatCard
-          title="Team Points"
-          value={stats?.teamPoints || 0}
-          icon={Trophy}
-          trend="Total earned"
-        />
-      </div>
+      {/* Stats Cards - Bento Grid */}
+      <BentoGrid>
+        <BentoCard delay={0}>
+          <BentoCardHeader>
+            <BentoCardTitle className="text-sm font-medium">Events Participated</BentoCardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </BentoCardHeader>
+          <BentoCardContent>
+            <div className="text-2xl font-bold">{stats?.eventsParticipated || 0}</div>
+            <p className="text-xs text-muted-foreground mt-1">All time</p>
+          </BentoCardContent>
+        </BentoCard>
 
-      {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Upcoming Events */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Your Upcoming Events</CardTitle>
+        <BentoCard delay={0.05}>
+          <BentoCardHeader>
+            <BentoCardTitle className="text-sm font-medium">Upcoming Events</BentoCardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </BentoCardHeader>
+          <BentoCardContent>
+            <div className="text-2xl font-bold">{stats?.upcomingEvents || 0}</div>
+            <p className="text-xs text-muted-foreground mt-1">Registered</p>
+          </BentoCardContent>
+        </BentoCard>
+
+        <BentoCard delay={0.1}>
+          <BentoCardHeader>
+            <BentoCardTitle className="text-sm font-medium">Workshops Attended</BentoCardTitle>
+            <GraduationCap className="h-4 w-4 text-muted-foreground" />
+          </BentoCardHeader>
+          <BentoCardContent>
+            <div className="text-2xl font-bold">{stats?.workshopsAttended || 0}</div>
+            <p className="text-xs text-muted-foreground mt-1">Completed</p>
+          </BentoCardContent>
+        </BentoCard>
+
+        <BentoCard delay={0.15}>
+          <BentoCardHeader>
+            <BentoCardTitle className="text-sm font-medium">Team Points</BentoCardTitle>
+            <Trophy className="h-4 w-4 text-muted-foreground" />
+          </BentoCardHeader>
+          <BentoCardContent>
+            <div className="text-2xl font-bold">{stats?.teamPoints || 0}</div>
+            <p className="text-xs text-muted-foreground mt-1">Total earned</p>
+          </BentoCardContent>
+        </BentoCard>
+
+        {/* Upcoming Events - Spans 2 columns */}
+        <BentoCard span="2" delay={0.2}>
+          <BentoCardHeader>
+            <BentoCardTitle>Your Upcoming Events</BentoCardTitle>
             <Link href="/member/events">
               <Button variant="outline" size="sm">
                 View All
                 <ArrowRight className="h-4 w-4 ml-1" />
               </Button>
             </Link>
-          </CardHeader>
-          <CardContent>
+          </BentoCardHeader>
+          <BentoCardContent>
             <div className="space-y-3">
               {stats?.upcomingEventsList?.slice(0, 4).map((event: any) => (
                 event && event.id ? (
-                  <div key={event.id} className="p-3 border rounded-lg">
+                  <div key={event.id} className="p-3 border rounded-lg hover:bg-muted/20 transition-colors">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <p className="font-medium">{event.title || 'Unknown Event'}</p>
@@ -154,25 +169,25 @@ export default function MemberDashboardPage() {
                 </div>
               )}
             </div>
-          </CardContent>
-        </Card>
+          </BentoCardContent>
+        </BentoCard>
 
         {/* My Teams */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>My Teams</CardTitle>
+        <BentoCard delay={0.25}>
+          <BentoCardHeader>
+            <BentoCardTitle>My Teams</BentoCardTitle>
             <Link href="/member/teams">
               <Button variant="outline" size="sm">
                 View All
                 <ArrowRight className="h-4 w-4 ml-1" />
               </Button>
             </Link>
-          </CardHeader>
-          <CardContent>
+          </BentoCardHeader>
+          <BentoCardContent>
             <div className="space-y-3">
               {stats?.myTeams?.slice(0, 4).map((team: any) => (
                 team && team.id ? (
-                  <div key={team.id} className="p-3 border rounded-lg">
+                  <div key={team.id} className="p-3 border rounded-lg hover:bg-muted/20 transition-colors">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <p className="font-medium">{team.name || 'Unknown Team'}</p>
@@ -203,16 +218,17 @@ export default function MemberDashboardPage() {
                 </div>
               )}
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </BentoCardContent>
+        </BentoCard>
+      </BentoGrid>
 
       {/* Quick Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <CtaCard>
+        <CtaCardHeader>
+          <CtaCardTitle>Quick Actions</CtaCardTitle>
+          <CtaCardDescription>Common tasks and shortcuts</CtaCardDescription>
+        </CtaCardHeader>
+        <CtaCardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Link href="/member/events">
               <Button variant="outline" className="w-full justify-start">
@@ -233,23 +249,8 @@ export default function MemberDashboardPage() {
               </Button>
             </Link>
           </div>
-        </CardContent>
-      </Card>
+        </CtaCardContent>
+      </CtaCard>
     </div>
-  )
-}
-
-function StatCard({ title, value, icon: Icon, trend }: any) {
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        <Icon className="h-4 w-4 text-muted-foreground" />
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
-        <p className="text-xs text-muted-foreground mt-1">{trend}</p>
-      </CardContent>
-    </Card>
   )
 }

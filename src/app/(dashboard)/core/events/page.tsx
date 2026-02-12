@@ -1,10 +1,9 @@
 "use client"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Plus, Calendar, Edit, Trash2, AlertCircle, Users, User, Settings, Trophy, Clock, MapPin } from "lucide-react"
+import { Plus, Calendar, Edit, Trash2, AlertCircle, Settings, Trophy, Clock, MapPin, Users, User } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
 import { CreateEventModal } from "./components/create-event-modal"
@@ -13,6 +12,9 @@ import { DeleteEventDialog } from "./components/delete-event-modal"
 import { EventRoundsModal } from "./components/event-rounds-modal"
 import { deleteEvent, getEvents, getRegisteredTeams } from "./actions"
 import { useRouter } from "next/navigation"
+import { MorphingCardStack, type LayoutMode } from "@/components/ui/morphing-card-stack"
+import { EventCardCore } from "@/components/events/event-card-core"
+import { CtaCard, CtaCardHeader, CtaCardTitle, CtaCardDescription, CtaCardContent } from "@/components/ui/cta-card"
 
 export default function EventsPage() {
   const [loadingData, setLoadingData] = useState(true)
@@ -23,9 +25,10 @@ export default function EventsPage() {
   const [isRoundsModalOpen, setIsRoundsModalOpen] = useState(false)
   const [selectedEvent, setSelectedEvent] = useState<any>(null)
   const [isManagementMode, setIsManagementMode] = useState(false)
-  const [registeredTeams, setRegisteredTeams] = useState<any>({});
+  const [registeredTeams, setRegisteredTeams] = useState<any>({})
+  const [viewMode, setViewMode] = useState<LayoutMode>("stack")
 
-  const router = useRouter();
+  const router = useRouter()
 
   const handleEventsOnLoad = useCallback(async () => {
     setLoadingData(true)
@@ -159,15 +162,15 @@ export default function EventsPage() {
       </div>
 
       {/* Active Events Section */}
-      <Card className="bg-dark-surface border-border">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+      <CtaCard variant="accent">
+        <CtaCardHeader>
+          <div className="flex items-center gap-2">
             <Calendar className="h-5 w-5 text-primary" />
-            Active Events
-          </CardTitle>
-          <p className="text-sm text-muted-foreground">Currently running and upcoming events</p>
-        </CardHeader>
-        <CardContent>
+            <CtaCardTitle>Active Events</CtaCardTitle>
+          </div>
+          <CtaCardDescription>Currently running and upcoming events</CtaCardDescription>
+        </CtaCardHeader>
+        <CtaCardContent>
           {loadingData ? (
             <div className="text-center py-8 text-muted-foreground">Loading events...</div>
           ) : events.length === 0 ? (
@@ -175,239 +178,70 @@ export default function EventsPage() {
               <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium mb-2">No events yet</h3>
               <p className="text-muted-foreground mb-4">Create your first event to get started!</p>
-              <Button onClick={() => setIsCreateModalOpen(true)} className="glow-blue">
+              <Button onClick={() => setIsCreateModalOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 Create First Event
               </Button>
             </div>
           ) : (
-            <div className="space-y-4">
-              {events.map((event) => {
-                const StatusIcon = getStatusIcon(event.status)
-                const teamsEvent = registeredTeams[event.id] || [];
-                const progressPercentage = 
-                  teamsEvent.length ? (teamsEvent.length / (event.max_participants / event.team_size)) * 100 : 0;
-
-                return (
-                  <div
-                    key={event.id}
-                    className={`p-6 rounded-lg border transition-all ${
-                      event.is_tournament
-                        ? "border-yellow-500/30 bg-yellow-500/5 glow-yellow"
-                        : "border-border bg-muted/20"
-                    }`}
-                  >
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <h3 className="text-xl font-semibold text-foreground">{event.title}</h3>
-                        {event.is_tournament && (
-                          <Badge variant="outline" className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
-                            <Trophy className="h-3 w-3 mr-1" />
-                            Tournament
-                          </Badge>
-                        )}
-                        <Badge variant="outline" className={`text-xs ${getStatusColor(event.status)}`}>
-                          <StatusIcon className="h-3 w-3 mr-1" />
-                          {event.status.replace("_", " ")}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        {event.type === "team" ? <Users className="h-4 w-4" /> : <User className="h-4 w-4" />}
-                        <span className="text-sm capitalize">{event.type}</span>
-                        {event.type === "team" && <span className="text-sm">({event.team_size} members)</span>}
-                      </div>
-                    </div>
-
-                    <p className="text-foreground leading-relaxed mb-4">{event.description}</p>
-
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm mb-4">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <span className="text-muted-foreground">Registration: </span>
-                          <span className="font-medium">
-                            {new Date(event.registration_deadline).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <span className="text-muted-foreground">Start: </span>
-                          <span className="font-medium">{new Date(event.start_date).toLocaleDateString()}</span>
-                        </div>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Participants: </span>
-                        <span className="font-medium">
-                          {teamsEvent.length || 0}/{event.max_participants / event.team_size}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Progress: </span>
-                        <span className="font-medium">{Math.round(progressPercentage)}%</span>
-                      </div>
-                    </div>
-
-                    {/* Progress Bar */}
-                    <div className="w-full bg-muted rounded-full h-2 mb-4">
-                      <div
-                        className="bg-primary h-2 rounded-full transition-all duration-300 glow-blue"
-                        style={{ width: `${progressPercentage}%` }}
-                      />
-                    </div>
-
-                    {/* Action Buttons */}
-                    {!isManagementMode && (
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleManageRounds(event)}
-                          className="text-xs"
-                        >
-                          Manage Rounds
-                        </Button>
-                        {
-                          event.status !== "upcoming" &&
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              className="text-xs bg-transparent"
-                              onClick={() => router.push(`/core/events/${event.id}/registrations`)}
-                            >
-                              View Registrations
-                            </Button>
-                        }
-                        {
-                          event.status === "ongoing" &&
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              className="text-xs bg-transparent"
-                              onClick={() => router.push(`/core/events/${event.id}/live`)}
-                            >
-                              Live Event
-                            </Button>
-                        }
-                        {
-                          event.status === "completed" &&
-                            <>
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                className="text-xs bg-transparent"
-                                onClick={() => router.push(`/core/events/${event.id}/live`)}
-                              >
-                                Live Event
-                              </Button>
-
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                className="text-xs bg-transparent"
-                                onClick={() => router.push(`/core/events/${event.id}/result`)}
-                                >
-                                Event Results
-                              </Button>
-                            </>
-                        }
-                      </div>
-                    )}
-                  </div>
+            <MorphingCardStack
+              cards={events.map((event) => ({
+                id: event.id,
+                title: event.title,
+                description: event.description,
+                content: (
+                  <EventCardCore
+                    event={event}
+                    registeredTeams={registeredTeams[event.id] || []}
+                    isManagementMode={isManagementMode}
+                    onEdit={handleEditEvent}
+                    onDelete={handleDeleteEvent}
+                    onManageRounds={handleManageRounds}
+                    onViewRegistrations={(id) => router.push(`/core/events/${id}/registrations`)}
+                    onViewLive={(id) => router.push(`/core/events/${id}/live`)}
+                    onViewResults={(id) => router.push(`/core/events/${id}/result`)}
+                  />
                 )
-              })}
-            </div>
+              }))}
+              defaultLayout={viewMode}
+            />
           )}
-        </CardContent>
-      </Card>
+        </CtaCardContent>
+      </CtaCard>
 
       {/* Management Section */}
       {isManagementMode && (
         <>
           <Separator className="my-6" />
-          <Card className="bg-dark-surface border-border">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+          <CtaCard>
+            <CtaCardHeader>
+              <div className="flex items-center gap-2">
                 <Settings className="h-5 w-5 text-primary" />
-                Manage All Events
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">Edit and delete all events. Total: {events.length} events</p>
-            </CardHeader>
-            <CardContent>
+                <CtaCardTitle>Manage All Events</CtaCardTitle>
+              </div>
+              <CtaCardDescription>Edit and delete all events. Total: {events.length} events</CtaCardDescription>
+            </CtaCardHeader>
+            <CtaCardContent>
               {events.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">No events to manage.</div>
               ) : (
                 <div className="space-y-3">
-                  {events.map((event) => {
-                    const StatusIcon = getStatusIcon(event.status)
-                    return (
-                      <div
-                        key={event.id}
-                        className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/10 hover:bg-muted/20 transition-colors group"
-                      >
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h4 className="font-medium text-foreground truncate">{event.title}</h4>
-                            {event.is_tournament && (
-                              <Badge
-                                variant="outline"
-                                className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-xs"
-                              >
-                                <Trophy className="h-3 w-3 mr-1" />
-                                Tournament
-                              </Badge>
-                            )}
-                            <Badge variant="outline" className={`text-xs ${getStatusColor(event.status)}`}>
-                              <StatusIcon className="h-3 w-3 mr-1" />
-                              {event.status.replace("_", " ")}
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-muted-foreground truncate">{event.description}</p>
-                          <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
-                            <div className="flex items-center gap-1">
-                              <Calendar className="h-3 w-3" />
-                              {new Date(event.start_date).toLocaleDateString()}
-                            </div>
-                            <div>
-                              {event.registered_count}/{event.max_participants} registered
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleManageRounds(event)}
-                            className="h-8 px-3 text-xs"
-                          >
-                            Rounds
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleEditEvent(event)}
-                            className="h-8 w-8 p-0"
-                          >
-                            <Edit className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleDeleteEvent(event)}
-                            className="h-8 w-8 p-0"
-                            disabled={event.status === "ongoing"}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
-                    )
-                  })}
+                  {events.map((event) => (
+                    <EventCardCore
+                      key={event.id}
+                      event={event}
+                      registeredTeams={registeredTeams[event.id] || []}
+                      isManagementMode={true}
+                      onEdit={handleEditEvent}
+                      onDelete={handleDeleteEvent}
+                      onManageRounds={handleManageRounds}
+                      compact
+                    />
+                  ))}
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </CtaCardContent>
+          </CtaCard>
         </>
       )}
 

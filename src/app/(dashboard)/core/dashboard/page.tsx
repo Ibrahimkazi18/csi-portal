@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -10,6 +9,8 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import * as dashboardActions from "./actions"
+import { BentoGrid, BentoCard, BentoCardHeader, BentoCardTitle, BentoCardContent } from "@/components/ui/bento-grid"
+import { CtaCard, CtaCardHeader, CtaCardTitle, CtaCardContent } from "@/components/ui/cta-card"
 
 interface DashboardStats {
   totalEvents: number
@@ -79,49 +80,66 @@ export default function CoreDashboardPage() {
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Total Events"
-          value={stats?.totalEvents || 0}
-          icon={Calendar}
-          trend={`${stats?.upcomingEvents || 0} upcoming`}
-        />
-        <StatCard
-          title="Active Members"
-          value={stats?.activeMembers || 0}
-          icon={Users}
-          trend="Registered users"
-        />
-        <StatCard
-          title="Workshops"
-          value={stats?.totalWorkshops || 0}
-          icon={GraduationCap}
-          trend="Educational sessions"
-        />
-        <StatCard
-          title="Pending Queries"
-          value={stats?.pendingQueries || 0}
-          icon={MessageSquare}
-          trend="Need response"
-          urgent={stats?.pendingQueries && stats.pendingQueries > 0}
-        />
-      </div>
+      {/* Stats Cards - Bento Grid */}
+      <BentoGrid>
+        <BentoCard delay={0}>
+          <BentoCardHeader>
+            <BentoCardTitle className="text-sm font-medium">Total Events</BentoCardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </BentoCardHeader>
+          <BentoCardContent>
+            <div className="text-2xl font-bold">{stats?.totalEvents || 0}</div>
+            <p className="text-xs text-muted-foreground mt-1">{stats?.upcomingEvents || 0} upcoming</p>
+          </BentoCardContent>
+        </BentoCard>
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Upcoming Events */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Upcoming Events</CardTitle>
+        <BentoCard delay={0.05}>
+          <BentoCardHeader>
+            <BentoCardTitle className="text-sm font-medium">Active Members</BentoCardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </BentoCardHeader>
+          <BentoCardContent>
+            <div className="text-2xl font-bold">{stats?.activeMembers || 0}</div>
+            <p className="text-xs text-muted-foreground mt-1">Registered users</p>
+          </BentoCardContent>
+        </BentoCard>
+
+        <BentoCard delay={0.1}>
+          <BentoCardHeader>
+            <BentoCardTitle className="text-sm font-medium">Workshops</BentoCardTitle>
+            <GraduationCap className="h-4 w-4 text-muted-foreground" />
+          </BentoCardHeader>
+          <BentoCardContent>
+            <div className="text-2xl font-bold">{stats?.totalWorkshops || 0}</div>
+            <p className="text-xs text-muted-foreground mt-1">Educational sessions</p>
+          </BentoCardContent>
+        </BentoCard>
+
+        <BentoCard delay={0.15} className={stats?.pendingQueries && stats.pendingQueries > 0 ? "border-orange-500/50" : ""}>
+          <BentoCardHeader>
+            <BentoCardTitle className="text-sm font-medium">Pending Queries</BentoCardTitle>
+            <MessageSquare className={`h-4 w-4 ${stats?.pendingQueries && stats.pendingQueries > 0 ? "text-orange-500" : "text-muted-foreground"}`} />
+          </BentoCardHeader>
+          <BentoCardContent>
+            <div className="text-2xl font-bold">{stats?.pendingQueries || 0}</div>
+            <p className={`text-xs mt-1 ${stats?.pendingQueries && stats.pendingQueries > 0 ? "text-orange-600" : "text-muted-foreground"}`}>
+              Need response
+            </p>
+          </BentoCardContent>
+        </BentoCard>
+
+        {/* Upcoming Events - Spans 2 columns */}
+        <BentoCard span="2" delay={0.2}>
+          <BentoCardHeader>
+            <BentoCardTitle>Upcoming Events</BentoCardTitle>
             <Link href="/core/events">
               <Button variant="outline" size="sm">View All</Button>
             </Link>
-          </CardHeader>
-          <CardContent>
+          </BentoCardHeader>
+          <BentoCardContent>
             <div className="space-y-3">
               {upcomingEvents.slice(0, 5).map((event) => (
-                <div key={event.id} className="flex items-center justify-between p-3 rounded-lg border">
+                <div key={event.id} className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/20 transition-colors">
                   <div className="flex-1">
                     <p className="font-medium">{event.title}</p>
                     <p className="text-sm text-muted-foreground">
@@ -151,18 +169,18 @@ export default function CoreDashboardPage() {
                 </div>
               )}
             </div>
-          </CardContent>
-        </Card>
+          </BentoCardContent>
+        </BentoCard>
 
         {/* Recent Activity */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <BentoCard delay={0.25}>
+          <BentoCardHeader>
+            <BentoCardTitle>Recent Activity</BentoCardTitle>
+          </BentoCardHeader>
+          <BentoCardContent>
             <div className="space-y-3">
               {activity.slice(0, 5).map((item, index) => (
-                <div key={index} className="flex items-start gap-3 p-3 rounded-lg border">
+                <div key={index} className="flex items-start gap-3 p-3 rounded-lg border hover:bg-muted/20 transition-colors">
                   <div className="p-1 rounded-full bg-primary/10">
                     {getActivityIcon(item.action)}
                   </div>
@@ -180,23 +198,23 @@ export default function CoreDashboardPage() {
                 </div>
               )}
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </BentoCardContent>
+        </BentoCard>
+      </BentoGrid>
 
       {/* Recent Queries */}
       {recentQueries.length > 0 && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Recent Queries</CardTitle>
+        <CtaCard variant="accent">
+          <CtaCardHeader>
+            <CtaCardTitle>Recent Queries</CtaCardTitle>
             <Link href="/core/queries">
               <Button variant="outline" size="sm">View All</Button>
             </Link>
-          </CardHeader>
-          <CardContent>
+          </CtaCardHeader>
+          <CtaCardContent>
             <div className="space-y-3">
               {recentQueries.slice(0, 3).map((query) => (
-                <div key={query.id} className="flex items-center justify-between p-3 rounded-lg border">
+                <div key={query.id} className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/20 transition-colors">
                   <div className="flex-1">
                     <p className="font-medium">{query.subject}</p>
                     <p className="text-sm text-muted-foreground">
@@ -216,27 +234,10 @@ export default function CoreDashboardPage() {
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
+          </CtaCardContent>
+        </CtaCard>
       )}
     </div>
-  )
-}
-
-function StatCard({ title, value, icon: Icon, trend, urgent }: any) {
-  return (
-    <Card className={urgent ? "border-orange-500/50" : ""}>
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        <Icon className={`h-4 w-4 ${urgent ? "text-orange-500" : "text-muted-foreground"}`} />
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{value}</div>
-        <p className={`text-xs mt-1 ${urgent ? "text-orange-600" : "text-muted-foreground"}`}>
-          {trend}
-        </p>
-      </CardContent>
-    </Card>
   )
 }
 

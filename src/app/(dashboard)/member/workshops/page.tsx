@@ -1,15 +1,15 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import Link from "next/link"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Search, Calendar, Users, CheckCircle } from "lucide-react"
-import { getAvailableWorkshops, getMyWorkshops, registerForWorkshop } from "./actions"
-import { toast } from "sonner"
+import { Search, GraduationCap, RefreshCcw, X } from "lucide-react"
+import { getAvailableWorkshops, getMyWorkshops } from "./actions"
+import { MorphingCardStack } from "@/components/ui/morphing-card-stack"
+import { WorkshopCardModern } from "@/components/workshops/workshop-card-modern"
+import { CtaCard, CtaCardHeader, CtaCardTitle, CtaCardDescription, CtaCardContent } from "@/components/ui/cta-card"
 
 export default function MemberWorkshopsPage() {
   const [availableWorkshops, setAvailableWorkshops] = useState<any[]>([])
@@ -55,205 +55,141 @@ export default function MemberWorkshopsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Workshops & Seminars</h1>
-        <p className="text-muted-foreground">
-          Browse and register for upcoming workshops
-        </p>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Workshops & Seminars</h1>
+          <p className="text-muted-foreground">
+            Browse and register for upcoming educational workshops
+          </p>
+        </div>
+        <Button variant="outline" onClick={loadWorkshops}>
+          <RefreshCcw className="h-4 w-4 mr-2" />
+          Refresh
+        </Button>
       </div>
 
-      {/* Search */}
-      <Card>
-        <CardContent className="p-4">
+      {/* Modern Search Bar */}
+      <CtaCard variant="accent">
+        <CtaCardContent className="p-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
-              placeholder="Search workshops..."
+              placeholder="Search workshops by title or description..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
+              className="pl-10 pr-10 h-12 text-base"
             />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
-        </CardContent>
-      </Card>
+          {searchQuery && (
+            <p className="text-sm text-muted-foreground mt-2">
+              Found {filteredAvailable.length + filteredMine.length} workshop(s) matching "{searchQuery}"
+            </p>
+          )}
+        </CtaCardContent>
+      </CtaCard>
 
       {/* Tabs */}
-      <Tabs defaultValue="available">
-        <TabsList>
-          <TabsTrigger value="available">
-            Available Workshops ({availableWorkshops.length})
+      <Tabs defaultValue="available" className="space-y-6">
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="available" className="gap-2">
+            <GraduationCap className="h-4 w-4" />
+            Available
+            <Badge variant="secondary" className="ml-1">
+              {availableWorkshops.length}
+            </Badge>
           </TabsTrigger>
-          <TabsTrigger value="my-workshops">
-            My Workshops ({myWorkshops.length})
+          <TabsTrigger value="my-workshops" className="gap-2">
+            <GraduationCap className="h-4 w-4" />
+            My Workshops
+            <Badge variant="secondary" className="ml-1">
+              {myWorkshops.length}
+            </Badge>
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="available" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredAvailable.map(workshop => (
-              <WorkshopCard
-                key={workshop.id}
-                workshop={workshop}
-                onRegister={loadWorkshops}
-              />
-            ))}
-          </div>
-
-          {filteredAvailable.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">No workshops available</p>
-            </div>
-          )}
+        <TabsContent value="available">
+          <CtaCard>
+            <CtaCardHeader>
+              <CtaCardTitle>Available Workshops</CtaCardTitle>
+              <CtaCardDescription>
+                Register for upcoming workshops and seminars
+              </CtaCardDescription>
+            </CtaCardHeader>
+            <CtaCardContent>
+              {filteredAvailable.length === 0 ? (
+                <div className="text-center py-12">
+                  <GraduationCap className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+                  <p className="text-muted-foreground">
+                    {searchQuery ? "No workshops match your search" : "No workshops available"}
+                  </p>
+                </div>
+              ) : (
+                <MorphingCardStack
+                  cards={filteredAvailable.map((workshop: any) => ({
+                    id: workshop.id,
+                    title: workshop.title,
+                    description: workshop.description,
+                    content: (
+                      <WorkshopCardModern
+                        workshop={workshop}
+                        onRegister={loadWorkshops}
+                      />
+                    )
+                  }))}
+                  defaultLayout="grid"
+                />
+              )}
+            </CtaCardContent>
+          </CtaCard>
         </TabsContent>
 
-        <TabsContent value="my-workshops" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredMine.map(workshop => (
-              <MyWorkshopCard key={workshop.id} workshop={workshop} />
-            ))}
-          </div>
-
-          {filteredMine.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">
-                You haven't registered for any workshops yet
-              </p>
-            </div>
-          )}
+        <TabsContent value="my-workshops">
+          <CtaCard variant="accent">
+            <CtaCardHeader>
+              <CtaCardTitle>My Workshops</CtaCardTitle>
+              <CtaCardDescription>
+                Workshops you've registered for
+              </CtaCardDescription>
+            </CtaCardHeader>
+            <CtaCardContent>
+              {filteredMine.length === 0 ? (
+                <div className="text-center py-12">
+                  <GraduationCap className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+                  <p className="text-muted-foreground">
+                    {searchQuery 
+                      ? "No registered workshops match your search" 
+                      : "You haven't registered for any workshops yet"}
+                  </p>
+                </div>
+              ) : (
+                <MorphingCardStack
+                  cards={filteredMine.map((workshop: any) => ({
+                    id: workshop.id,
+                    title: workshop.title,
+                    description: workshop.description,
+                    content: (
+                      <WorkshopCardModern
+                        workshop={workshop}
+                        isRegistered={true}
+                      />
+                    )
+                  }))}
+                  defaultLayout="list"
+                />
+              )}
+            </CtaCardContent>
+          </CtaCard>
         </TabsContent>
       </Tabs>
     </div>
-  )
-}
-
-function WorkshopCard({ workshop, onRegister }: any) {
-  const [registering, setRegistering] = useState(false)
-
-  const spotsLeft = workshop.max_participants - (workshop.registration_count || 0)
-  const isFull = spotsLeft <= 0
-  const isPastDeadline = new Date(workshop.registration_deadline) < new Date()
-  const canRegister = !isFull && !isPastDeadline && !workshop.is_registered
-
-  const handleRegister = async () => {
-    setRegistering(true)
-    const response = await registerForWorkshop(workshop.id)
-    
-    if (response.success) {
-      toast.success("Registration successful!")
-      onRegister()
-    } else {
-      toast.error(response.error)
-    }
-    
-    setRegistering(false)
-  }
-
-  return (
-    <Card className="hover:shadow-lg transition-shadow">
-      {workshop.banner_url && (
-        <img
-          src={workshop.banner_url}
-          alt={workshop.title}
-          className="w-full h-40 object-cover rounded-t-lg"
-        />
-      )}
-      <CardHeader>
-        <div className="flex items-start justify-between">
-          <CardTitle className="text-lg">{workshop.title}</CardTitle>
-          {workshop.is_registered && (
-            <Badge variant="default" className="bg-green-500">
-              <CheckCircle className="h-3 w-3 mr-1" />
-              Registered
-            </Badge>
-          )}
-          {isFull && !workshop.is_registered && (
-            <Badge variant="destructive">Full</Badge>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <p className="text-sm text-muted-foreground line-clamp-2">
-          {workshop.description}
-        </p>
-
-        <div className="space-y-2 text-sm">
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-            <span>{new Date(workshop.start_date).toLocaleDateString()}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Users className="h-4 w-4 text-muted-foreground" />
-            <span>
-              {workshop.registration_count || 0} / {workshop.max_participants} registered
-            </span>
-          </div>
-          {spotsLeft > 0 && spotsLeft <= 10 && !workshop.is_registered && (
-            <p className="text-orange-500 text-xs">
-              Only {spotsLeft} spot{spotsLeft !== 1 ? 's' : ''} left!
-            </p>
-          )}
-        </div>
-
-        <div className="flex gap-2">
-          <Link href={`/member/workshops/${workshop.id}`} className="flex-1">
-            <Button variant="outline" className="w-full">
-              View Details
-            </Button>
-          </Link>
-          {canRegister && (
-            <Button
-              onClick={handleRegister}
-              disabled={registering}
-              className="flex-1"
-            >
-              {registering ? "Registering..." : "Register"}
-            </Button>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
-function MyWorkshopCard({ workshop }: any) {
-  return (
-    <Card className="hover:shadow-lg transition-shadow">
-      <CardHeader>
-        <div className="flex items-start justify-between">
-          <CardTitle className="text-lg">{workshop.title}</CardTitle>
-          <div className="flex flex-col gap-2">
-            <Badge variant={
-              workshop.status === "completed" ? "secondary" : "default"
-            }>
-              {workshop.status}
-            </Badge>
-            {workshop.attended && (
-              <Badge variant="default" className="bg-green-500">
-                <CheckCircle className="h-3 w-3 mr-1" />
-                Attended
-              </Badge>
-            )}
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2 text-sm">
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-            <span>{new Date(workshop.start_date).toLocaleDateString()}</span>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Registered on</p>
-            <p className="text-sm">{new Date(workshop.registered_at).toLocaleDateString()}</p>
-          </div>
-        </div>
-
-        <Link href={`/member/workshops/${workshop.id}`}>
-          <Button variant="outline" className="w-full">
-            View Details
-          </Button>
-        </Link>
-      </CardContent>
-    </Card>
   )
 }
