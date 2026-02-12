@@ -117,14 +117,16 @@ const DotMap = () => {
 
     // Draw background dots
     function drawDots() {
-      ctx.clearRect(0, 0, dimensions.width, dimensions.height)
+      ctx?.clearRect(0, 0, dimensions.width, dimensions.height)
 
       // Draw the dots
       dots.forEach(dot => {
-        ctx.beginPath()
-        ctx.arc(dot.x, dot.y, dot.radius, 0, Math.PI * 2)
-        ctx.fillStyle = `rgba(99, 102, 241, ${dot.opacity})` // Indigo dots for dark theme
-        ctx.fill()
+        if(ctx) {
+          ctx.beginPath()
+          ctx.arc(dot.x, dot.y, dot.radius, 0, Math.PI * 2)
+          ctx.fillStyle = `rgba(99, 102, 241, ${dot.opacity})` // Indigo dots for dark theme
+          ctx.fill()
+        }
       })
     }
 
@@ -141,6 +143,8 @@ const DotMap = () => {
 
         const x = route.start.x + (route.end.x - route.start.x) * progress
         const y = route.start.y + (route.end.y - route.start.y) * progress
+
+        if (!ctx) return
 
         // Draw the route line
         ctx.beginPath()
