@@ -229,7 +229,7 @@ export default function LoginPage() {
   }, [state, router])
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4">
+    <div className="min-h-screen w-full flex items-center justify-center bg-linear-to-br from-gray-900 via-gray-800 to-gray-900 p-4">
       <div className="flex w-full h-full items-center justify-center">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
@@ -239,7 +239,7 @@ export default function LoginPage() {
         >
           {/* Left side - Map */}
           <div className="hidden md:block w-1/2 h-[600px] relative overflow-hidden border-r border-gray-800">
-            <div className="absolute inset-0 bg-gradient-to-br from-gray-900 to-gray-800">
+            <div className="absolute inset-0 bg-linear-to-br from-gray-900 to-gray-800">
               <DotMap />
               {/* Logo and text overlay */}
               <div className="absolute inset-0 flex flex-col items-center justify-center p-8 z-10">
@@ -249,7 +249,7 @@ export default function LoginPage() {
                   transition={{ delay: 0.6, duration: 0.5 }}
                   className="mb-6"
                 >
-                  <div className="h-12 w-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/50">
+                  <div className="h-12 w-12 rounded-full bg-linear-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/50">
                     <Computer className="text-white h-6 w-6" />
                   </div>
                 </motion.div>
@@ -257,7 +257,7 @@ export default function LoginPage() {
                   initial={{ opacity: 0, y: -20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.7, duration: 0.5 }}
-                  className="text-3xl font-bold mb-2 text-center text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400"
+                  className="text-3xl font-bold mb-2 text-center text-transparent bg-clip-text bg-linear-to-r from-indigo-400 to-purple-400"
                 >
                   CSI Dashboard
                 </motion.h2>
@@ -370,8 +370,8 @@ export default function LoginPage() {
                     className={cn(
                       "w-full relative overflow-hidden text-white py-2 rounded-lg transition-all duration-300",
                       activeTab === "member"
-                        ? "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
-                        : "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700",
+                        ? "bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
+                        : "bg-linear-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700",
                       isHovered ? "shadow-lg shadow-indigo-500/50" : ""
                     )}
                   >
@@ -384,7 +384,7 @@ export default function LoginPage() {
                         initial={{ left: "-100%" }}
                         animate={{ left: "100%" }}
                         transition={{ duration: 1, ease: "easeInOut" }}
-                        className="absolute top-0 bottom-0 left-0 w-20 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                        className="absolute top-0 bottom-0 left-0 w-20 bg-linear-to-r from-transparent via-white/30 to-transparent"
                         style={{ filter: "blur(8px)" }}
                       />
                     )}

@@ -1,29 +1,222 @@
 "use client"
 
-import { useActionState, useEffect, useMemo, useState } from "react"
+import { useActionState, useEffect, useMemo, useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Computer, Users, Eye, EyeOff } from "lucide-react"
-
-
+import { Computer, Users, Eye, EyeOff, ArrowRight } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { getPasswordChecks, isPasswordStrong } from "../../../../utils/password"
 import { signupAction, SignupState } from "./actions"
 import { PasswordChecklist } from "@/components/auth/password-checklist"
 import { toast } from "sonner"
+import { motion } from "framer-motion"
+
+// Helper function to merge class names
+const cn = (...classes: string[]) => {
+  return classes.filter(Boolean).join(" ")
+}
+
+type RoutePoint = {
+  x: number
+  y: number
+  delay: number
+}
+
+const DotMap = () => {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
+
+  // Set up routes that will animate across the map
+  const routes: { start: RoutePoint; end: RoutePoint; color: string }[] = [
+    {
+      start: { x: 100, y: 150, delay: 0 },
+      end: { x: 200, y: 80, delay: 2 },
+      color: "#6366f1", // Indigo for dark theme
+    },
+    {
+      start: { x: 200, y: 80, delay: 2 },
+      end: { x: 260, y: 120, delay: 4 },
+      color: "#6366f1",
+    },
+    {
+      start: { x: 50, y: 50, delay: 1 },
+      end: { x: 150, y: 180, delay: 3 },
+      color: "#6366f1",
+    },
+    {
+      start: { x: 280, y: 60, delay: 0.5 },
+      end: { x: 180, y: 180, delay: 2.5 },
+      color: "#6366f1",
+    },
+  ]
+
+  // Create dots for the world map
+  const generateDots = (width: number, height: number) => {
+    const dots = []
+    const gap = 12
+    const dotRadius = 1
+
+    // Create a dot grid pattern with random opacity
+    for (let x = 0; x < width; x += gap) {
+      for (let y = 0; y < height; y += gap) {
+        // Shape the dots to form a world map silhouette
+        const isInMapShape =
+          // North America
+          ((x < width * 0.25 && x > width * 0.05) && (y < height * 0.4 && y > height * 0.1)) ||
+          // South America
+          ((x < width * 0.25 && x > width * 0.15) && (y < height * 0.8 && y > height * 0.4)) ||
+          // Europe
+          ((x < width * 0.45 && x > width * 0.3) && (y < height * 0.35 && y > height * 0.15)) ||
+          // Africa
+          ((x < width * 0.5 && x > width * 0.35) && (y < height * 0.65 && y > height * 0.35)) ||
+          // Asia
+          ((x < width * 0.7 && x > width * 0.45) && (y < height * 0.5 && y > height * 0.1)) ||
+          // Australia
+          ((x < width * 0.8 && x > width * 0.65) && (y < height * 0.8 && y > height * 0.6))
+
+        if (isInMapShape && Math.random() > 0.3) {
+          dots.push({
+            x,
+            y,
+            radius: dotRadius,
+            opacity: Math.random() * 0.4 + 0.2, // Lower opacity for dark theme
+          })
+        }
+      }
+    }
+    return dots
+  }
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    const resizeObserver = new ResizeObserver(entries => {
+      const { width, height } = entries[0].contentRect
+      setDimensions({ width, height })
+      canvas.width = width
+      canvas.height = height
+    })
+
+    resizeObserver.observe(canvas.parentElement as Element)
+    return () => resizeObserver.disconnect()
+  }, [])
+
+  useEffect(() => {
+    if (!dimensions.width || !dimensions.height) return
+
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    const ctx = canvas.getContext("2d")
+    if (!ctx) return
+
+    const dots = generateDots(dimensions.width, dimensions.height)
+    let animationFrameId: number
+    let startTime = Date.now()
+
+    // Draw background dots
+    function drawDots() {
+      ctx?.clearRect(0, 0, dimensions.width, dimensions.height)
+
+      // Draw the dots
+      dots.forEach(dot => {
+        if(ctx) {
+          ctx.beginPath()
+          ctx.arc(dot.x, dot.y, dot.radius, 0, Math.PI * 2)
+          ctx.fillStyle = `rgba(99, 102, 241, ${dot.opacity})` // Indigo dots for dark theme
+          ctx.fill()
+        }
+      })
+    }
+
+    // Draw animated routes
+    function drawRoutes() {
+      const currentTime = (Date.now() - startTime) / 1000 // Time in seconds
+
+      routes.forEach(route => {
+        const elapsed = currentTime - route.start.delay
+        if (elapsed <= 0) return
+
+        const duration = 3 // Animation duration in seconds
+        const progress = Math.min(elapsed / duration, 1)
+
+        const x = route.start.x + (route.end.x - route.start.x) * progress
+        const y = route.start.y + (route.end.y - route.start.y) * progress
+
+        if (!ctx) return
+
+        // Draw the route line
+        ctx.beginPath()
+        ctx.moveTo(route.start.x, route.start.y)
+        ctx.lineTo(x, y)
+        ctx.strokeStyle = route.color
+        ctx.lineWidth = 1.5
+        ctx.stroke()
+
+        // Draw the start point
+        ctx.beginPath()
+        ctx.arc(route.start.x, route.start.y, 3, 0, Math.PI * 2)
+        ctx.fillStyle = route.color
+        ctx.fill()
+
+        // Draw the moving point
+        ctx.beginPath()
+        ctx.arc(x, y, 3, 0, Math.PI * 2)
+        ctx.fillStyle = "#818cf8"
+        ctx.fill()
+
+        // Add glow effect to the moving point
+        ctx.beginPath()
+        ctx.arc(x, y, 6, 0, Math.PI * 2)
+        ctx.fillStyle = "rgba(129, 140, 248, 0.4)"
+        ctx.fill()
+
+        // If the route is complete, draw the end point
+        if (progress === 1) {
+          ctx.beginPath()
+          ctx.arc(route.end.x, route.end.y, 3, 0, Math.PI * 2)
+          ctx.fillStyle = route.color
+          ctx.fill()
+        }
+      })
+    }
+
+    // Animation loop
+    function animate() {
+      drawDots()
+      drawRoutes()
+
+      // If all routes are complete, restart the animation
+      const currentTime = (Date.now() - startTime) / 1000
+      if (currentTime > 15) { // Reset after 15 seconds
+        startTime = Date.now()
+      }
+
+      animationFrameId = requestAnimationFrame(animate)
+    }
+
+    animate()
+
+    return () => cancelAnimationFrame(animationFrameId)
+  }, [dimensions])
+
+  return (
+    <div className="relative w-full h-full overflow-hidden">
+      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
+    </div>
+  )
+}
 
 export default function SignupPage() {
   const router = useRouter()
-
   const [activeTab, setActiveTab] = useState<"member" | "core-team">("member")
   const [password, setPassword] = useState("")
   const [confirm, setConfirm] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
+  const [isHovered, setIsHovered] = useState(false)
 
   const checks = getPasswordChecks(password)
   const strong = isPasswordStrong(password)
@@ -41,178 +234,212 @@ export default function SignupPage() {
       toast("Check your email", { description: "We sent you a confirmation link." })
       router.push(state.redirectTo)
     }
-  }, [state, router, toast])
+  }, [state, router])
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md space-y-6">
-        <div className="text-center space-y-2">
-          <Computer className="h-12 w-12 mx-auto" />
-          <h1 className="text-3xl font-bold">CSI Dashboard</h1>
-          <p className="text-muted-foreground">Create your account</p>
-        </div>
+    <div className="min-h-screen w-full flex items-center justify-center bg-linear-to-br from-gray-900 via-gray-800 to-gray-900 p-4">
+      <div className="flex w-full h-full items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          className="w-full max-w-4xl overflow-hidden rounded-2xl flex bg-gray-900 shadow-2xl border border-gray-800"
+        >
+          {/* Left side - Map */}
+          <div className="hidden md:block w-1/2 h-[700px] relative overflow-hidden border-r border-gray-800">
+            <div className="absolute inset-0 bg-linear-to-br from-gray-900 to-gray-800">
+              <DotMap />
+              {/* Logo and text overlay */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center p-8 z-10">
+                <motion.div
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6, duration: 0.5 }}
+                  className="mb-6"
+                >
+                  <div className="h-12 w-12 rounded-full bg-linear-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/50">
+                    <Computer className="text-white h-6 w-6" />
+                  </div>
+                </motion.div>
+                <motion.h2
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.7, duration: 0.5 }}
+                  className="text-3xl font-bold mb-2 text-center text-transparent bg-clip-text bg-linear-to-r from-indigo-400 to-purple-400"
+                >
+                  CSI Dashboard
+                </motion.h2>
+                <motion.p
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.8, duration: 0.5 }}
+                  className="text-sm text-center text-gray-400 max-w-xs"
+                >
+                  Join the CSI community and start your journey with us
+                </motion.p>
+              </div>
+            </div>
+          </div>
 
-        <Card className="bg-card border-border">
-          <CardHeader>
-            <CardTitle className="text-center">Join CSI</CardTitle>
-            <CardDescription>Choose your account type and sign up</CardDescription>
-            <p className="text-muted-foreground text-sm">
-              Already have an account?{" "}
-              <a href="/login" className="underline font-medium">
-                Log In
-              </a>
-            </p>
-          </CardHeader>
-          <CardContent>
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "member" | "core-team")}>
-              <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="member" className="flex items-center gap-2">
+          {/* Right side - Sign Up Form */}
+          <div className="w-full md:w-1/2 p-8 md:p-10 flex flex-col justify-center bg-gray-900 overflow-y-auto max-h-[700px]">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <h1 className="text-2xl md:text-3xl font-bold mb-1 text-white">Create account</h1>
+              <p className="text-gray-400 mb-6">Sign up to get started</p>
+
+              {/* Account Type Tabs */}
+              <div className="flex gap-2 mb-6">
+                <button
+                  onClick={() => setActiveTab("member")}
+                  className={cn(
+                    "flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all duration-300",
+                    activeTab === "member"
+                      ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/50"
+                      : "bg-gray-800 text-gray-400 hover:bg-gray-700"
+                  )}
+                >
                   <Computer className="h-4 w-4" />
-                  CSI Member
-                </TabsTrigger>
-                <TabsTrigger value="core-team" className="flex items-center gap-2">
+                  <span className="text-sm font-medium">Member</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab("core-team")}
+                  className={cn(
+                    "flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all duration-300",
+                    activeTab === "core-team"
+                      ? "bg-purple-600 text-white shadow-lg shadow-purple-500/50"
+                      : "bg-gray-800 text-gray-400 hover:bg-gray-700"
+                  )}
+                >
                   <Users className="h-4 w-4" />
-                  Core Team
-                </TabsTrigger>
-              </TabsList>
+                  <span className="text-sm font-medium">Core Team</span>
+                </button>
+              </div>
 
-              <TabsContent value="member" className="space-y-4">
-                <form action={formAction} className="space-y-4" noValidate>
-                  {state?.error ? (
-                    <Alert variant="destructive">
-                      <AlertDescription>{state.error}</AlertDescription>
-                    </Alert>
-                  ) : null}
-                  <input type="hidden" name="accountType" value={activeTab} />
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input id="email" name="email" type="email" placeholder="your.email@example.com" required />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
-                    <div className="relative">
-                      <Input
-                        id="password"
-                        name="password"
-                        type={showPassword ? "text" : "password"}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        className="pr-10"
-                      />
-                      <button
-                        type="button"
-                        aria-label={showPassword ? "Hide password" : "Show password"}
-                        onClick={() => setShowPassword((s) => !s)}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground"
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="confirm">Confirm password</Label>
-                    <div className="relative">
-                      <Input
-                        id="confirm"
-                        name="confirm"
-                        type={showConfirm ? "text" : "password"}
-                        value={confirm}
-                        onChange={(e) => setConfirm(e.target.value)}
-                        required
-                        className="pr-10"
-                      />
-                      <button
-                        type="button"
-                        aria-label={showConfirm ? "Hide password" : "Show password"}
-                        onClick={() => setShowConfirm((s) => !s)}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground"
-                      >
-                        {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </div>
+              <form action={formAction} className="space-y-4" noValidate>
+                {state?.error && (
+                  <Alert variant="destructive" className="bg-red-900/20 border-red-900/50 text-red-400">
+                    <AlertDescription>{state.error}</AlertDescription>
+                  </Alert>
+                )}
 
-                  <PasswordChecklist checks={checks} />
+                <input type="hidden" name="accountType" value={activeTab} />
 
-                  <Button type="submit" className="w-full" disabled={isPending || !strong || !match}>
-                    {isPending ? "Creating account..." : "Sign Up"}
-                  </Button>
-                </form>
-              </TabsContent>
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
+                    Email <span className="text-indigo-400">*</span>
+                  </label>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    placeholder="Enter your email address"
+                    required
+                    className="bg-gray-800 border-gray-700 placeholder:text-gray-500 text-white w-full focus:border-indigo-500 focus:ring-indigo-500"
+                  />
+                </div>
 
-              <TabsContent value="core-team" className="space-y-4">
-                <form action={formAction} className="space-y-4" noValidate>
-                  {state?.error ? (
-                    <Alert variant="destructive">
-                      <AlertDescription>{state.error}</AlertDescription>
-                    </Alert>
-                  ) : null}
-                  <input type="hidden" name="accountType" value={activeTab} />
-                  <div className="space-y-2">
-                    <Label htmlFor="core-email">Email</Label>
-                    <Input id="core-email" name="email" type="email" placeholder="admin@csi.com" required />
+                <div>
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1">
+                    Password <span className="text-indigo-400">*</span>
+                  </label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      name="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Create a strong password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      className="bg-gray-800 border-gray-700 placeholder:text-gray-500 text-white w-full pr-10 focus:border-indigo-500 focus:ring-indigo-500"
+                    />
+                    <button
+                      type="button"
+                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-300"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="core-password">Password</Label>
-                    <div className="relative">
-                      <Input
-                        id="core-password"
-                        name="password"
-                        type={showPassword ? "text" : "password"}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        className="pr-10"
-                      />
-                      <button
-                        type="button"
-                        aria-label={showPassword ? "Hide password" : "Show password"}
-                        onClick={() => setShowPassword((s) => !s)}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground"
-                      >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="core-confirm">Confirm password</Label>
-                    <div className="relative">
-                      <Input
-                        id="core-confirm"
-                        name="confirm"
-                        type={showConfirm ? "text" : "password"}
-                        value={confirm}
-                        onChange={(e) => setConfirm(e.target.value)}
-                        required
-                        className="pr-10"
-                      />
-                      <button
-                        type="button"
-                        aria-label={showConfirm ? "Hide password" : "Show password"}
-                        onClick={() => setShowConfirm((s) => !s)}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground"
-                      >
-                        {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </div>
+                </div>
 
-                  <PasswordChecklist checks={checks} />
+                <div>
+                  <label htmlFor="confirm" className="block text-sm font-medium text-gray-300 mb-1">
+                    Confirm Password <span className="text-indigo-400">*</span>
+                  </label>
+                  <div className="relative">
+                    <Input
+                      id="confirm"
+                      name="confirm"
+                      type={showConfirm ? "text" : "password"}
+                      placeholder="Confirm your password"
+                      value={confirm}
+                      onChange={(e) => setConfirm(e.target.value)}
+                      required
+                      className="bg-gray-800 border-gray-700 placeholder:text-gray-500 text-white w-full pr-10 focus:border-indigo-500 focus:ring-indigo-500"
+                    />
+                    <button
+                      type="button"
+                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-300"
+                      onClick={() => setShowConfirm(!showConfirm)}
+                    >
+                      {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </div>
 
+                <PasswordChecklist checks={checks} />
+
+                <motion.div
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.98 }}
+                  onHoverStart={() => setIsHovered(true)}
+                  onHoverEnd={() => setIsHovered(false)}
+                  className="pt-2"
+                >
                   <Button
                     type="submit"
-                    variant="secondary"
-                    className="w-full"
-                    disabled={isPending || !isPasswordStrong(password) || !match}
+                    disabled={isPending || !strong || !match}
+                    className={cn(
+                      "w-full relative overflow-hidden text-white py-2 rounded-lg transition-all duration-300",
+                      activeTab === "member"
+                        ? "bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
+                        : "bg-linear-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700",
+                      isHovered ? "shadow-lg shadow-indigo-500/50" : ""
+                    )}
                   >
-                    {isPending ? "Creating account..." : "Sign Up"}
+                    <span className="flex items-center justify-center">
+                      {isPending ? "Creating account..." : `Sign up as ${activeTab === "member" ? "Member" : "Core Team"}`}
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </span>
+                    {isHovered && (
+                      <motion.span
+                        initial={{ left: "-100%" }}
+                        animate={{ left: "100%" }}
+                        transition={{ duration: 1, ease: "easeInOut" }}
+                        className="absolute top-0 bottom-0 left-0 w-20 bg-linear-to-r from-transparent via-white/30 to-transparent"
+                        style={{ filter: "blur(8px)" }}
+                      />
+                    )}
                   </Button>
-                </form>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
+                </motion.div>
+
+                <div className="text-center mt-6">
+                  <p className="text-gray-400 text-sm">
+                    Already have an account?{" "}
+                    <a href="/login" className="text-indigo-400 hover:text-indigo-300 transition-colors font-medium">
+                      Sign in
+                    </a>
+                  </p>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        </motion.div>
       </div>
     </div>
   )
