@@ -10,15 +10,9 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Plus, Trash2, Users, Calendar as CalendarIcon } from "lucide-react"
+import { Plus, Trash2, Users, Calendar as CalendarIcon, Edit, FileText, Settings } from "lucide-react"
+import { ModernEditModal } from "@/components/ui/modern-modal"
+import { ModernForm, FormSection } from "@/components/ui/modern-form"
 
 const workshopSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters").max(200, "Title too long"),
@@ -53,14 +47,13 @@ const workshopSchema = z.object({
 type WorkshopFormData = z.infer<typeof workshopSchema>
 
 interface EditWorkshopModalProps {
-  isOpen: boolean
-  onClose: () => void
   workshop: any
   hosts: any[]
   onSuccess: () => void
+  children: React.ReactNode
 }
 
-export function EditWorkshopModal({ isOpen, onClose, workshop, hosts, onSuccess }: EditWorkshopModalProps) {
+export function EditWorkshopModal({ workshop, hosts, onSuccess, children }: EditWorkshopModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const form = useForm<WorkshopFormData>({
@@ -119,19 +112,18 @@ export function EditWorkshopModal({ isOpen, onClose, workshop, hosts, onSuccess 
       const response = await updateWorkshop(workshop.id, data)
 
       if (!response.success) {
-        toast.error("Error", { description: response.error })
+        toast.error("Error Updating Workshop", { description: response.error })
         return
       }
       
-      toast.success("Success", {
+      toast.success("Workshop Updated", {
         description: "Workshop updated successfully"
       })
 
       onSuccess()
-      onClose()
     } catch (error: any) {
       console.error('Update error:', error)
-      toast.error("Error", {
+      toast.error("Error Updating Workshop", {
         description: error.message || "Failed to update workshop"
       })
     } finally {
@@ -149,27 +141,29 @@ export function EditWorkshopModal({ isOpen, onClose, workshop, hosts, onSuccess 
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <CalendarIcon className="h-5 w-5" />
-            Edit Workshop
-          </DialogTitle>
-          <DialogDescription>
-            Update workshop details and hosts
-          </DialogDescription>
-        </DialogHeader>
-
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          {/* Basic Details */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium">Basic Details</h3>
-            
-            <div>
+    <ModernEditModal
+      title="Edit Workshop"
+      description="Update workshop details and hosts"
+      icon={Edit}
+      onSuccess={onSuccess}
+      triggerElement={children}
+      maxWidth="md:max-w-4xl"
+    >
+      {({ onSuccess: handleSuccess }) => (
+        <ModernForm
+          onSubmit={async (e) => {
+            await form.handleSubmit(onSubmit)(e)
+            handleSuccess()
+          }}
+          loading={isSubmitting}
+          submitText="Update Workshop"
+        >
+          <FormSection title="Basic Details" icon={FileText}>
+            <div className="space-y-2">
               <Label>Workshop Title *</Label>
               <Input
                 {...form.register("title")}
+                className="h-10 rounded-lg"
                 placeholder="e.g., Introduction to Machine Learning"
               />
               {form.formState.errors.title && (
@@ -179,10 +173,11 @@ export function EditWorkshopModal({ isOpen, onClose, workshop, hosts, onSuccess 
               )}
             </div>
 
-            <div>
+            <div className="space-y-2">
               <Label>Description *</Label>
               <Textarea
                 {...form.register("description")}
+                className="rounded-lg resize-none"
                 placeholder="Describe what participants will learn..."
                 rows={4}
               />
@@ -193,11 +188,11 @@ export function EditWorkshopModal({ isOpen, onClose, workshop, hosts, onSuccess 
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-2">
                 <Label>Category</Label>
                 <Select onValueChange={(value) => form.setValue("category", value)} value={form.watch("category")}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-10 rounded-lg">
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
@@ -210,10 +205,10 @@ export function EditWorkshopModal({ isOpen, onClose, workshop, hosts, onSuccess 
                 </Select>
               </div>
 
-              <div>
+              <div className="space-y-2">
                 <Label>Status</Label>
                 <Select onValueChange={(value) => form.setValue("status", value)} value={form.watch("status")}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-10 rounded-lg">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -227,11 +222,12 @@ export function EditWorkshopModal({ isOpen, onClose, workshop, hosts, onSuccess 
               </div>
             </div>
 
-            <div>
+            <div className="space-y-2">
               <Label>Max Participants *</Label>
               <Input
                 type="number"
                 {...form.register("max_participants", { valueAsNumber: true })}
+                className="h-10 rounded-lg"
                 min={1}
                 max={500}
               />
@@ -242,10 +238,11 @@ export function EditWorkshopModal({ isOpen, onClose, workshop, hosts, onSuccess 
               )}
             </div>
 
-            <div>
+            <div className="space-y-2">
               <Label>Banner Image URL (Optional)</Label>
               <Input
                 {...form.register("banner_url")}
+                className="h-10 rounded-lg"
                 placeholder="https://example.com/banner.jpg"
               />
               {form.formState.errors.banner_url && (
@@ -255,10 +252,11 @@ export function EditWorkshopModal({ isOpen, onClose, workshop, hosts, onSuccess 
               )}
             </div>
 
-            <div>
+            <div className="space-y-2">
               <Label>Meeting Link (Optional)</Label>
               <Input
                 {...form.register("meeting_link")}
+                className="h-10 rounded-lg"
                 placeholder="https://meet.google.com/xxx-xxxx-xxx"
               />
               {form.formState.errors.meeting_link && (
@@ -267,20 +265,18 @@ export function EditWorkshopModal({ isOpen, onClose, workshop, hosts, onSuccess 
                 </p>
               )}
             </div>
-          </div>
+          </FormSection>
 
-          {/* Schedule */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium">Schedule</h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
+          <FormSection title="Schedule" icon={CalendarIcon}>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="space-y-2">
                 <Label>Registration Deadline *</Label>
                 <Input
                   type="datetime-local"
                   {...form.register("registration_deadline", {
                     setValueAs: (v) => v ? new Date(v) : undefined
                   })}
+                  className="h-10 rounded-lg"
                   defaultValue={formatDateTimeLocal(form.getValues("registration_deadline"))}
                 />
                 {form.formState.errors.registration_deadline && (
@@ -290,13 +286,14 @@ export function EditWorkshopModal({ isOpen, onClose, workshop, hosts, onSuccess 
                 )}
               </div>
 
-              <div>
+              <div className="space-y-2">
                 <Label>Start Date & Time *</Label>
                 <Input
                   type="datetime-local"
                   {...form.register("start_date", {
                     setValueAs: (v) => v ? new Date(v) : undefined
                   })}
+                  className="h-10 rounded-lg"
                   defaultValue={formatDateTimeLocal(form.getValues("start_date"))}
                 />
                 {form.formState.errors.start_date && (
@@ -306,13 +303,14 @@ export function EditWorkshopModal({ isOpen, onClose, workshop, hosts, onSuccess 
                 )}
               </div>
 
-              <div>
+              <div className="space-y-2">
                 <Label>End Date & Time *</Label>
                 <Input
                   type="datetime-local"
                   {...form.register("end_date", {
                     setValueAs: (v) => v ? new Date(v) : undefined
                   })}
+                  className="h-10 rounded-lg"
                   defaultValue={formatDateTimeLocal(form.getValues("end_date"))}
                 />
                 {form.formState.errors.end_date && (
@@ -322,94 +320,83 @@ export function EditWorkshopModal({ isOpen, onClose, workshop, hosts, onSuccess 
                 )}
               </div>
             </div>
-          </div>
+          </FormSection>
 
-          {/* Hosts */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Hosts/Speakers
-            </h3>
-            
-            {fields.map((field, index) => (
-              <div key={field.id} className="p-4 border rounded-lg space-y-3">
-                <div className="flex justify-between items-center">
-                  <Label>Host {index + 1}</Label>
-                  {fields.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => remove(index)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label>Name *</Label>
-                    <Input
-                      {...form.register(`hosts.${index}.name`)}
-                      placeholder="Speaker name"
-                    />
-                    {form.formState.errors.hosts?.[index]?.name && (
-                      <p className="text-sm text-destructive mt-1">
-                        {form.formState.errors.hosts[index]?.name?.message}
-                      </p>
+          <FormSection title="Hosts/Speakers" icon={Users}>
+            <div className="space-y-3">
+              {fields.map((field, index) => (
+                <div key={field.id} className="p-4 border rounded-lg space-y-3 bg-muted/20">
+                  <div className="flex justify-between items-center">
+                    <Label>Host {index + 1}</Label>
+                    {fields.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => remove(index)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     )}
                   </div>
 
-                  <div>
-                    <Label>Designation (Optional)</Label>
-                    <Input
-                      {...form.register(`hosts.${index}.designation`)}
-                      placeholder="e.g., AI Researcher"
-                    />
-                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label>Name *</Label>
+                      <Input
+                        {...form.register(`hosts.${index}.name`)}
+                        className="h-10 rounded-lg"
+                        placeholder="Speaker name"
+                      />
+                      {form.formState.errors.hosts?.[index]?.name && (
+                        <p className="text-sm text-destructive mt-1">
+                          {form.formState.errors.hosts[index]?.name?.message}
+                        </p>
+                      )}
+                    </div>
 
-                  <div className="col-span-2">
-                    <Label>CSI Member (Optional)</Label>
-                    <select
-                      {...form.register(`hosts.${index}.profile_id`)}
-                      className="w-full px-3 py-2 bg-input border border-border rounded-md"
-                    >
-                      <option value="">Not a CSI member</option>
-                      {/* TODO: Populate with CSI members */}
-                    </select>
+                    <div className="space-y-2">
+                      <Label>Designation (Optional)</Label>
+                      <Input
+                        {...form.register(`hosts.${index}.designation`)}
+                        className="h-10 rounded-lg"
+                        placeholder="e.g., AI Researcher"
+                      />
+                    </div>
+
+                    <div className="col-span-full space-y-2">
+                      <Label>CSI Member (Optional)</Label>
+                      <select
+                        {...form.register(`hosts.${index}.profile_id`)}
+                        className="w-full h-10 px-3 py-2 bg-input border border-border rounded-lg"
+                      >
+                        <option value="">Not a CSI member</option>
+                        {/* TODO: Populate with CSI members */}
+                      </select>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
 
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => append({ name: "", designation: "", profile_id: "" })}
-              className="w-full"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Another Host
-            </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => append({ name: "", designation: "", profile_id: "" })}
+                className="w-full h-10 rounded-lg"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Another Host
+              </Button>
 
-            {form.formState.errors.hosts && (
-              <p className="text-sm text-destructive">
-                {form.formState.errors.hosts.message}
-              </p>
-            )}
-          </div>
-
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Updating..." : "Update Workshop"}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+              {form.formState.errors.hosts && (
+                <p className="text-sm text-destructive">
+                  {form.formState.errors.hosts.message}
+                </p>
+              )}
+            </div>
+          </FormSection>
+        </ModernForm>
+      )}
+    </ModernEditModal>
   )
 }

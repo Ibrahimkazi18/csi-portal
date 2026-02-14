@@ -5,17 +5,18 @@ import { Button } from "@/components/ui/button"
 import { Calendar, Users, User, Trophy, Clock, MapPin, Edit, Trash2, Settings, AlertCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
+import { EditEventModal } from "@/app/(dashboard)/core/events/components/edit-event-modal"
 
 interface EventCardCoreProps {
   event: any
   registeredTeams?: any[]
   isManagementMode?: boolean
-  onEdit?: (event: any) => void
   onDelete?: (event: any) => void
   onManageRounds?: (event: any) => void
   onViewRegistrations?: (eventId: string) => void
   onViewLive?: (eventId: string) => void
   onViewResults?: (eventId: string) => void
+  onSuccess?: () => void
   compact?: boolean
 }
 
@@ -23,12 +24,12 @@ export function EventCardCore({
   event, 
   registeredTeams = [],
   isManagementMode = false,
-  onEdit,
   onDelete,
   onManageRounds,
   onViewRegistrations,
   onViewLive,
   onViewResults,
+  onSuccess,
   compact = false
 }: EventCardCoreProps) {
   const [isHovered, setIsHovered] = useState(false)
@@ -114,9 +115,11 @@ export function EventCardCore({
               "flex items-center gap-2 transition-opacity",
               isHovered ? "opacity-100" : "opacity-0"
             )}>
-              <Button size="sm" variant="outline" onClick={() => onEdit?.(event)} className="h-7 w-7 p-0">
-                <Edit className="h-3 w-3" />
-              </Button>
+              <EditEventModal event={event} onSuccess={onSuccess || (() => {})}>
+                <Button size="sm" variant="outline" className="h-7 w-7 p-0">
+                  <Edit className="h-3 w-3" />
+                </Button>
+              </EditEventModal>
               <Button 
                 size="sm" 
                 variant="destructive" 
@@ -170,9 +173,11 @@ export function EventCardCore({
               "flex items-center gap-2 ml-4 transition-opacity",
               isHovered ? "opacity-100" : "opacity-50"
             )}>
-              <Button size="sm" variant="outline" onClick={() => onEdit?.(event)} className="h-8 w-8 p-0">
-                <Edit className="h-4 w-4" />
-              </Button>
+              <EditEventModal event={event} onSuccess={onSuccess || (() => {})}>
+                <Button size="sm" variant="outline" className="h-8 w-8 p-0">
+                  <Edit className="h-4 w-4" />
+                </Button>
+              </EditEventModal>
               <Button 
                 size="sm" 
                 variant="destructive" 
@@ -187,7 +192,7 @@ export function EventCardCore({
         </div>
       </div>
 
-      <p className="text-foreground leading-relaxed mb-4 flex-grow">{event.description}</p>
+      <p className="text-foreground leading-relaxed mb-4 grow">{event.description}</p>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm mb-4">
         <div className="flex items-center gap-2">

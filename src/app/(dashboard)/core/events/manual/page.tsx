@@ -16,10 +16,16 @@ export default function ManualEventsPage() {
     setRefreshKey(prev => prev + 1)
   }
 
+  if (isLoading) {
+    return (
+      <div className="relative w-full h-screen">
+        <Preloader onComplete={() => setIsLoading(false)} />
+      </div>
+    )
+  }
+
   return (
     <>
-      {isLoading && <Preloader onComplete={() => setIsLoading(false)} />}
-      
       {!isLoading && (
         <div className="space-y-8">
           {/* Header */}

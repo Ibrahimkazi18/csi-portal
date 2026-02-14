@@ -1,46 +1,37 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { updateGuideSection } from "../actions"
 import { toast } from "sonner"
-import { Plus, Trash2 } from "lucide-react"
-import { set } from "date-fns"
+import { Plus, Trash2, Edit, FileText, Settings } from "lucide-react"
+import { iconMap } from "../constants"
+import { ModernEditModal } from "@/components/ui/modern-modal"
+import { ModernForm, FormSection } from "@/components/ui/modern-form"
 
 interface EditGuideSectionModalProps {
-  isOpen: boolean
-  onClose: () => void
   section: any
   onSuccess: () => void
+  children: React.ReactNode
 }
 
-export function EditGuideSectionModal({ isOpen, onClose, section, onSuccess }: EditGuideSectionModalProps) {
+export function EditGuideSectionModal({ section, onSuccess, children }: EditGuideSectionModalProps) {
   const [title, setTitle] = useState("")
   const [icon, setIcon] = useState("")
   const [order, setOrder] = useState(0)
   const [contentItems, setContentItems] = useState<string[]>([""])
   const [loading, setLoading] = useState(false)
 
-  const availableIcons = [
-    { value: "Info", label: "Info" },
-    { value: "BookOpen", label: "Book Open" },
-    { value: "Settings", label: "Settings" },
-    // Add more icons as needed
-  ]
+  const availableIcons = Object.entries(iconMap).map(([key, IconComponent]) => ({
+    value: key,
+    label: key.replace(/([A-Z])/g, " $1").trim(), 
+    icon: <IconComponent className="w-4 h-4 mr-2" />,
+  }));
 
   useEffect(() => {
     if (section) {
@@ -96,7 +87,6 @@ export function EditGuideSectionModal({ isOpen, onClose, section, onSuccess }: E
       })
 
       onSuccess()
-      onClose()
     } catch (error: any) {
       toast.error("Error Updating Section", {
         description: error.message || "Failed to update section.",
@@ -107,100 +97,107 @@ export function EditGuideSectionModal({ isOpen, onClose, section, onSuccess }: E
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] border-border text-foreground max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Edit Guide Section</DialogTitle>
-          <DialogDescription>Make changes to the guide section. Click save when you're done.</DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="title" className="text-right">
-              Title *
-            </Label>
-            <Input
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="col-span-3 bg-input border-border"
-              placeholder="e.g., Community Guidelines"
-              required
-            />
-          </div>
-
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="icon" className="text-right">
-              Icon *
-            </Label>
-            <Select value={icon} onValueChange={setIcon} required>
-              <SelectTrigger className="col-span-3 bg-input border-border">
-                <SelectValue placeholder="Select an icon" />
-              </SelectTrigger>
-              <SelectContent className="border-border">
-                {availableIcons.map((iconOption) => (
-                  <SelectItem key={iconOption.value} value={iconOption.value}>
-                    {iconOption.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="order" className="text-right">
-            Order *
-            </Label>
-            <Input
-                type="number"
-                min={0}
-                placeholder="Enter order (e.g., 1, 2, 3...)"
-                value={order}
-                onChange={(e) => setOrder(Number(e.target.value))}
-                className="col-span-3 bg-input border-border"
+    <ModernEditModal
+      title="Edit Guide Section"
+      description="Make changes to the guide section. Click save when you're done."
+      icon={Edit}
+      onSuccess={onSuccess}
+      triggerElement={children}
+    >
+      {({ onSuccess: handleSuccess }) => (
+        <ModernForm
+          onSubmit={(e) => {
+            handleSubmit(e).then(() => handleSuccess())
+          }}
+          loading={loading}
+          submitText="Save Changes"
+        >
+          <FormSection title="Basic Information" icon={FileText}>
+            <div className="space-y-2">
+              <Label htmlFor="title">Section Title *</Label>
+              <Input
+                id="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="h-10 rounded-lg"
+                placeholder="e.g., Community Guidelines"
                 required
-            />
-          </div>
+              />
+            </div>
 
-          <div className="space-y-3">
-            <Label className="text-sm font-medium">Content Items *</Label>
-            {contentItems.map((item, index) => (
-              <div key={index} className="flex gap-2">
-                <Textarea
-                  value={item}
-                  onChange={(e) => handleContentItemChange(index, e.target.value)}
-                  className="bg-input border-border resize-none"
-                  placeholder={`Content item ${index + 1}`}
-                  rows={2}
-                />
-                {contentItems.length > 1 && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleRemoveContentItem(index)}
-                    className="px-2"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="icon">Icon *</Label>
+                <Select value={icon} onValueChange={setIcon} required>
+                  <SelectTrigger className="h-10 rounded-lg">
+                    <SelectValue placeholder="Select an icon" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60 overflow-y-auto">
+                    {availableIcons.map((iconOption) => (
+                      <SelectItem key={iconOption.value} value={iconOption.value}>
+                        <div className="flex items-center">
+                          {iconOption.icon}
+                          <span>{iconOption.label}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            ))}
-            <Button type="button" variant="outline" onClick={handleAddContentItem} className="w-full bg-transparent">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Content Item
-            </Button>
-          </div>
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading} className="glow-blue">
-              {loading ? "Saving..." : "Save Changes"}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+              <div className="space-y-2">
+                <Label htmlFor="order">Display Order *</Label>
+                <Input
+                  id="order"
+                  type="number"
+                  min={0}
+                  placeholder="e.g., 1, 2, 3..."
+                  value={order}
+                  onChange={(e) => setOrder(Number(e.target.value))}
+                  className="h-10 rounded-lg"
+                  required
+                />
+              </div>
+            </div>
+          </FormSection>
+
+          <FormSection title="Content Items" icon={Settings}>
+            <div className="space-y-3">
+              {contentItems.map((item, index) => (
+                <div key={index} className="flex gap-2">
+                  <Textarea
+                    value={item}
+                    onChange={(e) => handleContentItemChange(index, e.target.value)}
+                    className="rounded-lg resize-none"
+                    placeholder={`Content item ${index + 1}`}
+                    rows={2}
+                  />
+                  {contentItems.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleRemoveContentItem(index)}
+                      className="px-2 h-10"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={handleAddContentItem} 
+                className="w-full h-10 rounded-lg"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Content Item
+              </Button>
+            </div>
+          </FormSection>
+        </ModernForm>
+      )}
+    </ModernEditModal>
   )
 }

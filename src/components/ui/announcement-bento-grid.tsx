@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils"
 import { Calendar, Users, Shield, Edit, Trash2, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { EditAnnouncementModal } from "@/app/(dashboard)/core/announcements/components/edit-announcement-modal"
 
 export interface AnnouncementBentoItem {
   id: string
@@ -18,8 +19,8 @@ export interface AnnouncementBentoItem {
 
 interface AnnouncementBentoGridProps {
   items: AnnouncementBentoItem[]
-  onEdit?: (item: AnnouncementBentoItem) => void
   onDelete?: (item: AnnouncementBentoItem) => void
+  onSuccess?: () => void
   showActions?: boolean
 }
 
@@ -51,8 +52,8 @@ const getAudienceColor = (audience: string) => {
 
 function AnnouncementBentoGrid({ 
   items, 
-  onEdit, 
   onDelete,
+  onSuccess,
   showActions = false 
 }: AnnouncementBentoGridProps) {
   return (
@@ -90,17 +91,18 @@ function AnnouncementBentoGrid({
             </div>
 
             {/* Action buttons */}
-            {showActions && (onEdit || onDelete) && (
+            {showActions && (onSuccess || onDelete) && (
               <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                {onEdit && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => onEdit(item)}
-                    className="h-8 w-8 p-0"
-                  >
-                    <Edit className="h-3 w-3" />
-                  </Button>
+                {onSuccess && (
+                  <EditAnnouncementModal announcement={item} onSuccess={onSuccess}>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 w-8 p-0"
+                    >
+                      <Edit className="h-3 w-3" />
+                    </Button>
+                  </EditAnnouncementModal>
                 )}
                 {onDelete && (
                   <Button

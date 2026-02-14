@@ -1,30 +1,22 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
+import { Trophy, PlusIcon, FileText, Calendar, Settings } from "lucide-react"
 import { createTournament } from "../actions"
+import { ModernCreateModal } from "@/components/ui/modern-modal"
+import { ModernForm, FormSection } from "@/components/ui/modern-form"
 
 interface CreateTournamentModalProps {
-  isOpen: boolean
-  onClose: () => void
   onSuccess: () => void
 }
 
-export function CreateTournamentModal({ isOpen, onClose, onSuccess }: CreateTournamentModalProps) {
+export function CreateTournamentModal({ onSuccess }: CreateTournamentModalProps) {
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     title: "",
@@ -44,11 +36,11 @@ export function CreateTournamentModal({ isOpen, onClose, onSuccess }: CreateTour
         throw new Error(response.message)
       }
 
-      toast.success("Success", {
+      toast.success("Tournament Created", {
         description: response.message,
       })
-      onSuccess()
-      onClose()
+      
+      // Reset form
       setFormData({
         title: "",
         description: "",
@@ -56,8 +48,9 @@ export function CreateTournamentModal({ isOpen, onClose, onSuccess }: CreateTour
         start_date: "",
         end_date: "",
       })
+      onSuccess()
     } catch (error: any) {
-      toast.error("Error", {
+      toast.error("Error Creating Tournament", {
         description: error.message || "Failed to create tournament",
       })
     } finally {
@@ -69,75 +62,96 @@ export function CreateTournamentModal({ isOpen, onClose, onSuccess }: CreateTour
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
+  const triggerButton = (
+    <Button className="glow-blue">
+      <PlusIcon className="mr-1 size-4" />
+      Create Tournament
+    </Button>
+  )
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Create New Tournament</DialogTitle>
-          <DialogDescription>Create a new tournament for teams to compete in</DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="title">Tournament Title</Label>
-            <Input
-              id="title"
-              value={formData.title}
-              onChange={(e) => handleInputChange("title", e.target.value)}
-              placeholder="Enter tournament title"
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => handleInputChange("description", e.target.value)}
-              placeholder="Enter tournament description"
-              rows={3}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="year">Year</Label>
-            <Input
-              id="year"
-              type="number"
-              value={formData.year}
-              onChange={(e) => handleInputChange("year", Number.parseInt(e.target.value))}
-              min={new Date().getFullYear()}
-              required
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
+    <ModernCreateModal
+      title="Create New Tournament"
+      description="Create a new tournament for teams to compete in"
+      icon={Trophy}
+      onSuccess={onSuccess}
+      triggerButton={triggerButton}
+    >
+      {({ onSuccess: handleSuccess }) => (
+        <ModernForm
+          onSubmit={(e) => {
+            handleSubmit(e).then(() => handleSuccess())
+          }}
+          loading={loading}
+          submitText="Create Tournament"
+        >
+          <FormSection title="Basic Information" icon={FileText}>
             <div className="space-y-2">
-              <Label htmlFor="start_date">Start Date (Optional)</Label>
+              <Label htmlFor="title">Tournament Title *</Label>
               <Input
-                id="start_date"
-                type="date"
-                value={formData.start_date}
-                onChange={(e) => handleInputChange("start_date", e.target.value)}
+                id="title"
+                value={formData.title}
+                onChange={(e) => handleInputChange("title", e.target.value)}
+                className="h-10 rounded-lg"
+                placeholder="e.g., Annual Programming Contest"
+                required
               />
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="end_date">End Date (Optional)</Label>
-              <Input
-                id="end_date"
-                type="date"
-                value={formData.end_date}
-                onChange={(e) => handleInputChange("end_date", e.target.value)}
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => handleInputChange("description", e.target.value)}
+                className="rounded-lg resize-none"
+                placeholder="Enter tournament description"
+                rows={3}
               />
             </div>
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading} className="glow-blue">
-              {loading ? "Creating..." : "Create Tournament"}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+          </FormSection>
+
+          <FormSection title="Tournament Settings" icon={Settings}>
+            <div className="space-y-2">
+              <Label htmlFor="year">Year *</Label>
+              <Input
+                id="year"
+                type="number"
+                value={formData.year}
+                onChange={(e) => handleInputChange("year", Number.parseInt(e.target.value))}
+                className="h-10 rounded-lg"
+                min={new Date().getFullYear()}
+                required
+              />
+            </div>
+          </FormSection>
+
+          <FormSection title="Schedule (Optional)" icon={Calendar}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="start_date">Start Date</Label>
+                <Input
+                  id="start_date"
+                  type="date"
+                  value={formData.start_date}
+                  onChange={(e) => handleInputChange("start_date", e.target.value)}
+                  className="h-10 rounded-lg"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="end_date">End Date</Label>
+                <Input
+                  id="end_date"
+                  type="date"
+                  value={formData.end_date}
+                  onChange={(e) => handleInputChange("end_date", e.target.value)}
+                  className="h-10 rounded-lg"
+                />
+              </div>
+            </div>
+          </FormSection>
+        </ModernForm>
+      )}
+    </ModernCreateModal>
   )
 }

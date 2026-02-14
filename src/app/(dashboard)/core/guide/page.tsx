@@ -18,8 +18,6 @@ export default function GuidePage() {
   const [showPreloader, setShowPreloader] = useState(true)
   const [guideContents, setGuideContents] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [selectedSection, setSelectedSection] = useState<any>(null)
   const [isManagementMode, setIsManagementMode] = useState(false)
@@ -57,11 +55,6 @@ export default function GuidePage() {
         <Preloader onComplete={handlePreloaderComplete} />
       </div>
     )
-  }
-
-  const handleEditSection = (section: any) => {
-    setSelectedSection(section)
-    setIsEditModalOpen(true)
   }
 
   const handleDeleteSection = (section: any) => {
@@ -106,10 +99,7 @@ export default function GuidePage() {
             {isManagementMode ? "Exit Management" : "Manage Sections"}
           </Button>
           {isManagementMode && (
-            <Button onClick={() => setIsCreateModalOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Section
-            </Button>
+            <CreateGuideSectionModal onSuccess={fetchGuides} />
           )}
           <div className="flex items-center gap-2 text-muted-foreground">
             <BookOpen className="h-5 w-5" />
@@ -148,13 +138,14 @@ export default function GuidePage() {
               {/* Management Actions */}
               {isManagementMode && (
                 <div className="absolute top-4 right-4 flex gap-2 z-10">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleEditSection(section)}
+                  <EditGuideSectionModal
+                    section={section}
+                    onSuccess={fetchGuides}
                   >
-                    <Edit className="h-4 w-4" />
-                  </Button>
+                    <Button size="sm" variant="outline">
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  </EditGuideSectionModal>
                   <Button
                     size="sm"
                     variant="destructive"
@@ -183,10 +174,7 @@ export default function GuidePage() {
             <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
             <h3 className="text-lg font-medium mb-2">No guide sections found</h3>
             <p className="text-muted-foreground mb-4">Get started by creating your first guide section.</p>
-            <Button onClick={() => setIsCreateModalOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Create First Section
-            </Button>
+            <CreateGuideSectionModal onSuccess={fetchGuides} />
           </CtaCardContent>
         </CtaCard>
       )}
@@ -220,17 +208,6 @@ export default function GuidePage() {
       </CtaCard>
 
       {/* Modals */}
-      <CreateGuideSectionModal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        onSuccess={fetchGuides}
-      />
-      <EditGuideSectionModal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        section={selectedSection}
-        onSuccess={fetchGuides}
-      />
       <DeleteGuideSectionDialog
         isOpen={isDeleteDialogOpen}
         onClose={() => setIsDeleteDialogOpen(false)}

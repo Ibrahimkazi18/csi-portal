@@ -1,34 +1,26 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { toast } from "sonner"
-import { Users, Shield } from "lucide-react"
+import { Users, Shield, Edit, Target, FileText } from "lucide-react"
 import { updateAnnouncement } from "../actions"
+import { ModernEditModal } from "@/components/ui/modern-modal"
+import { ModernForm, FormSection } from "@/components/ui/modern-form"
 
 interface EditAnnouncementModalProps {
-  isOpen: boolean
-  onClose: () => void
   announcement: any
   onSuccess: () => void
+  children: React.ReactNode
 }
 
-export function EditAnnouncementModal({ isOpen, onClose, announcement, onSuccess }: EditAnnouncementModalProps) {
+export function EditAnnouncementModal({ announcement, onSuccess, children }: EditAnnouncementModalProps) {
   const [title, setTitle] = useState("")
   const [content, setContent] = useState("")
   const [targetAudience, setTargetAudience] = useState<"all" | "core-team" | "members">("all")
@@ -82,7 +74,6 @@ export function EditAnnouncementModal({ isOpen, onClose, announcement, onSuccess
       })
 
       onSuccess()
-      onClose()
     } catch (error: any) {
       toast.error("Error Updating Announcement", {
         description: error.message || "Failed to update announcement.",
@@ -93,95 +84,88 @@ export function EditAnnouncementModal({ isOpen, onClose, announcement, onSuccess
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] border-border text-foreground">
-        <DialogHeader>
-          <DialogTitle>Edit Announcement</DialogTitle>
-          <DialogDescription>Make changes to the announcement. Click save when you're done.</DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="title" className="text-right">
-              Title *
-            </Label>
-            <Input
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="col-span-3 bg-input border-border"
-              placeholder="e.g., Important Meeting Tomorrow"
-              required
-            />
-          </div>
-
-          <div className="grid grid-cols-4 items-start gap-4">
-            <Label htmlFor="content" className="text-right pt-2">
-              Content *
-            </Label>
-            <Textarea
-              id="content"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              className="col-span-3 bg-input border-border resize-none"
-              placeholder="Write your announcement content here..."
-              rows={4}
-              required
-            />
-          </div>
-
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="audience" className="text-right">
-              Audience *
-            </Label>
-            <Select
-              value={targetAudience}
-              onValueChange={(value) => setTargetAudience(value as "all" | "core-team" | "members")}
-              required
-            >
-              <SelectTrigger className="col-span-3 bg-input border-border">
-                <SelectValue placeholder="Select target audience" />
-              </SelectTrigger>
-              <SelectContent className="border-border">
-                {audienceOptions.map((option) => {
-                  const Icon = option.icon
-                  return (
-                    <SelectItem key={option.value} value={option.value}>
-                      <div className="flex items-center gap-2">
-                        <Icon className="h-4 w-4" />
-                        <div>
-                          <div className="font-medium">{option.label}</div>
-                          <div className="text-xs text-muted-foreground">{option.description}</div>
-                        </div>
-                      </div>
-                    </SelectItem>
-                  )
-                })}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="important" className="text-right">
-              Mark as Important
-            </Label>
-            <div className="col-span-3 flex items-center space-x-2">
-              <Switch id="important" checked={isImportant} onCheckedChange={setIsImportant} />
-              <Label htmlFor="important" className="text-sm text-muted-foreground">
-                Important announcements are highlighted with a red border
-              </Label>
+    <ModernEditModal
+      title="Edit Announcement"
+      description="Make changes to the announcement. Click save when you're done."
+      icon={Edit}
+      onSuccess={onSuccess}
+      triggerElement={children}
+    >
+      {({ onSuccess: handleSuccess }) => (
+        <ModernForm
+          onSubmit={(e) => {
+            handleSubmit(e).then(() => handleSuccess())
+          }}
+          loading={loading}
+          submitText="Save Changes"
+        >
+          <FormSection title="Basic Information" icon={FileText}>
+            <div className="space-y-2">
+              <Label htmlFor="title">Title *</Label>
+              <Input
+                id="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="h-10 rounded-lg"
+                placeholder="e.g., Important Meeting Tomorrow"
+                required
+              />
             </div>
-          </div>
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading} className="glow-blue">
-              {loading ? "Saving..." : "Save Changes"}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+            <div className="space-y-2">
+              <Label htmlFor="content">Content *</Label>
+              <Textarea
+                id="content"
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                className="min-h-[100px] rounded-lg resize-none"
+                placeholder="Write your announcement content here..."
+                required
+              />
+            </div>
+          </FormSection>
+
+          <FormSection title="Audience & Settings" icon={Target}>
+            <div className="space-y-2">
+              <Label htmlFor="audience">Target Audience *</Label>
+              <Select
+                value={targetAudience}
+                onValueChange={(value) => setTargetAudience(value as "all" | "core-team" | "members")}
+                required
+              >
+                <SelectTrigger className="h-10 rounded-lg">
+                  <SelectValue placeholder="Select target audience" />
+                </SelectTrigger>
+                <SelectContent>
+                  {audienceOptions.map((option) => {
+                    const Icon = option.icon
+                    return (
+                      <SelectItem key={option.value} value={option.value}>
+                        <div className="flex items-center gap-2">
+                          <Icon className="h-4 w-4" />
+                          <div>
+                            <div className="font-medium">{option.label}</div>
+                            <div className="text-xs text-muted-foreground">{option.description}</div>
+                          </div>
+                        </div>
+                      </SelectItem>
+                    )
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-center space-x-3 p-3 rounded-lg border bg-muted/30">
+              <Switch id="important" checked={isImportant} onCheckedChange={setIsImportant} />
+              <Label htmlFor="important" className="flex items-center gap-2 cursor-pointer text-sm">
+                <Shield className="h-4 w-4" />
+                Mark as Important
+              </Label>
+              <span className="text-xs text-muted-foreground">Highlighted with red border</span>
+            </div>
+          </FormSection>
+        </ModernForm>
+      )}
+    </ModernEditModal>
   )
 }

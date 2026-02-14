@@ -26,7 +26,6 @@ export default function WorkshopDetailsPage() {
   const [loading, setLoading] = useState(true)
   const [workshop, setWorkshop] = useState<any>(null)
   const [completing, setCompleting] = useState(false)
-  const [showEditModal, setShowEditModal] = useState(false)
   
   const loadWorkshop = async () => {
     setLoading(true)
@@ -128,10 +127,16 @@ export default function WorkshopDetailsPage() {
         <div className="flex gap-2">
           {event.status !== "completed" && (
             <>
-              <Button variant="outline" size="sm" onClick={() => setShowEditModal(true)}>
-                <Edit className="h-4 w-4 mr-2" />
-                Edit
-              </Button>
+              <EditWorkshopModal
+                workshop={workshop.event}
+                hosts={workshop.hosts}
+                onSuccess={loadWorkshop}
+              >
+                <Button variant="outline" size="sm">
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
+              </EditWorkshopModal>
               <DeleteWorkshopButton
                 workshopId={workshopId}
                 workshopTitle={event.title}
@@ -334,16 +339,17 @@ export default function WorkshopDetailsPage() {
         </Card>
       )}
 
-      {/* Edit Workshop Modal */}
+      {/* Edit Workshop Modal - Usage example:
       {workshop && (
         <EditWorkshopModal
-          isOpen={showEditModal}
-          onClose={() => setShowEditModal(false)}
           workshop={workshop.event}
           hosts={workshop.hosts}
           onSuccess={loadWorkshop}
-        />
+        >
+          <Button>Edit Workshop</Button>
+        </EditWorkshopModal>
       )}
+      */}
     </div>
   )
 }

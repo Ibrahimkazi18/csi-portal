@@ -1,33 +1,24 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
-import { Plus, Trash2 } from "lucide-react"
+import { Plus, Trash2, BookOpen, PlusIcon, FileText, Settings } from "lucide-react"
 import { createGuideSection } from "../actions"
 import { iconMap } from "../constants"
+import { ModernCreateModal } from "@/components/ui/modern-modal"
+import { ModernForm, FormSection } from "@/components/ui/modern-form"
 
 interface CreateGuideSectionModalProps {
-  isOpen: boolean
-  onClose: () => void
   onSuccess: () => void
 }
 
-export function CreateGuideSectionModal({ isOpen, onClose, onSuccess }: CreateGuideSectionModalProps) {
+export function CreateGuideSectionModal({ onSuccess }: CreateGuideSectionModalProps) {
   const [title, setTitle] = useState("")
   const [order, setOrder] = useState(0)
   const [icon, setIcon] = useState("")
@@ -87,8 +78,8 @@ export function CreateGuideSectionModal({ isOpen, onClose, onSuccess }: CreateGu
       setTitle("")
       setIcon("")
       setContentItems([""])
+      setOrder(0)
       onSuccess()
-      onClose()
     } catch (error: any) {
       toast.error("Error Creating Section", {
         description: error.message || "Failed to create section.",
@@ -98,104 +89,115 @@ export function CreateGuideSectionModal({ isOpen, onClose, onSuccess }: CreateGu
     }
   }
 
+  const triggerButton = (
+    <Button>
+      <PlusIcon className="mr-1 size-4" />
+      Add Section
+    </Button>
+  )
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] border-border text-foreground max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Create New Guide Section</DialogTitle>
-          <DialogDescription>Add a new section to the CSI guide with title, icon, and content items.</DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="title" className="text-right">
-              Title *
-            </Label>
-            <Input
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="col-span-3 bg-input border-border"
-              placeholder="e.g., Community Guidelines"
-              required
-            />
-          </div>
-
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="icon" className="text-right">
-              Icon *
-            </Label>
-            <Select value={icon} onValueChange={setIcon} required>
-              <SelectTrigger className="col-span-3 bg-input border-border">
-                <SelectValue placeholder="Select an icon" />
-              </SelectTrigger>
-              <SelectContent className="border-border max-h-60 overflow-y-auto">
-                {availableIcons.map((iconOption) => (
-                    <SelectItem key={iconOption.value} value={iconOption.value}>
-                    <div className="flex items-center">
-                        {iconOption.icon}
-                        <span>{iconOption.label}</span>
-                    </div>
-                    </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="order" className="text-right">
-              Order *
-            </Label>
-            <Input
-                type="number"
-                min={0}
-                placeholder="Enter order (e.g., 1, 2, 3...)"
-                value={order}
-                onChange={(e) => setOrder(Number(e.target.value))}
-                className="col-span-3 bg-input border-border"
+    <ModernCreateModal
+      title="Create New Guide Section"
+      description="Add a new section to the CSI guide with title, icon, and content items"
+      icon={BookOpen}
+      onSuccess={onSuccess}
+      triggerButton={triggerButton}
+    >
+      {({ onSuccess: handleSuccess }) => (
+        <ModernForm
+          onSubmit={(e) => {
+            handleSubmit(e).then(() => handleSuccess())
+          }}
+          loading={loading}
+          submitText="Create Section"
+        >
+          <FormSection title="Basic Information" icon={FileText}>
+            <div className="space-y-2">
+              <Label htmlFor="title">Section Title *</Label>
+              <Input
+                id="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="h-10 rounded-lg"
+                placeholder="e.g., Community Guidelines"
                 required
-            />
-          </div>
+              />
+            </div>
 
-          <div className="space-y-3">
-            <Label className="text-sm font-medium">Content Items *</Label>
-            {contentItems.map((item, index) => (
-              <div key={index} className="flex gap-2">
-                <Textarea
-                  value={item}
-                  onChange={(e) => handleContentItemChange(index, e.target.value)}
-                  className="bg-input border-border resize-none"
-                  placeholder={`Content item ${index + 1}`}
-                  rows={2}
-                />
-                {contentItems.length > 1 && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleRemoveContentItem(index)}
-                    className="px-2"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="icon">Icon *</Label>
+                <Select value={icon} onValueChange={setIcon} required>
+                  <SelectTrigger className="h-10 rounded-lg">
+                    <SelectValue placeholder="Select an icon" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-60 overflow-y-auto">
+                    {availableIcons.map((iconOption) => (
+                      <SelectItem key={iconOption.value} value={iconOption.value}>
+                        <div className="flex items-center">
+                          {iconOption.icon}
+                          <span>{iconOption.label}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            ))}
-            <Button type="button" variant="outline" onClick={handleAddContentItem} className="w-full bg-transparent">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Content Item
-            </Button>
-          </div>
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading} className="glow-blue">
-              {loading ? "Creating..." : "Create Section"}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+              <div className="space-y-2">
+                <Label htmlFor="order">Display Order *</Label>
+                <Input
+                  id="order"
+                  type="number"
+                  min={0}
+                  placeholder="e.g., 1, 2, 3..."
+                  value={order}
+                  onChange={(e) => setOrder(Number(e.target.value))}
+                  className="h-10 rounded-lg"
+                  required
+                />
+              </div>
+            </div>
+          </FormSection>
+
+          <FormSection title="Content Items" icon={Settings}>
+            <div className="space-y-3">
+              {contentItems.map((item, index) => (
+                <div key={index} className="flex gap-2">
+                  <Textarea
+                    value={item}
+                    onChange={(e) => handleContentItemChange(index, e.target.value)}
+                    className="rounded-lg resize-none"
+                    placeholder={`Content item ${index + 1}`}
+                    rows={2}
+                  />
+                  {contentItems.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleRemoveContentItem(index)}
+                      className="px-2 h-10"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={handleAddContentItem} 
+                className="w-full h-10 rounded-lg"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Content Item
+              </Button>
+            </div>
+          </FormSection>
+        </ModernForm>
+      )}
+    </ModernCreateModal>
   )
 }

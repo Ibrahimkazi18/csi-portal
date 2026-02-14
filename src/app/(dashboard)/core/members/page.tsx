@@ -42,11 +42,10 @@ export default function MembersPage() {
   const [members, setMembers] = useState<any[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [sortBy, setSortBy] = useState<"full_name" | "role" | "created_at" | "member_role">("member_role")
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [selectedMember, setSelectedMember] = useState<Member | null>(null)
   const [loadingData, setLoadingData] = useState(true)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [viewMode, setViewMode] = useState<"all" | "active" | "pending">("all")
   const [currentPage, setCurrentPage] = useState(1)
 
@@ -160,10 +159,7 @@ export default function MembersPage() {
           <h1 className="text-3xl font-bold text-neon">Members Management</h1>
           <p className="text-muted-foreground">Manage CSI members and their information</p>
         </div>
-        <Button className="glow-blue" onClick={() => setIsAddModalOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Member
-        </Button>
+        <AddMemberModal onSuccess={fetchAllMembers} />
       </div>
       <Card className="bg-dark-surface border-border">
         <CardHeader>
@@ -338,8 +334,6 @@ export default function MembersPage() {
       </Card>
 
       {/* Modals */}
-      <AddMemberModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onSuccess={fetchAllMembers} />
-
       <EditMemberModal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}

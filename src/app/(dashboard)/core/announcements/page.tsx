@@ -16,8 +16,6 @@ export default function AnnouncementsPage() {
   const [showPreloader, setShowPreloader] = useState(true)
   const [loadingData, setLoadingData] = useState(true)
   const [announcements, setAnnouncements] = useState<any[]>([])
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<any>(null)
   const [isManagementMode, setIsManagementMode] = useState(false)
@@ -65,7 +63,6 @@ export default function AnnouncementsPage() {
 
   const handleEditAnnouncement = (announcement: any) => {
     setSelectedAnnouncement(announcement)
-    setIsEditModalOpen(true)
   }
 
   const handleDeleteAnnouncement = (announcement: any) => {
@@ -114,10 +111,7 @@ export default function AnnouncementsPage() {
             <Settings className="h-4 w-4 mr-2" />
             {isManagementMode ? "Exit Management" : "Manage Announcements"}
           </Button>
-          <Button onClick={() => setIsCreateModalOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            New Announcement
-          </Button>
+          <CreateAnnouncementModal onSuccess={handleAllAnnouncementsOnLoad} />
         </div>
       </div>
 
@@ -133,10 +127,7 @@ export default function AnnouncementsPage() {
             <AlertCircle className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-50" />
             <h3 className="text-lg font-medium mb-2">No announcements yet</h3>
             <p className="text-muted-foreground mb-4">Create your first announcement to get started!</p>
-            <Button onClick={() => setIsCreateModalOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Create First Announcement
-            </Button>
+            <CreateAnnouncementModal onSuccess={handleAllAnnouncementsOnLoad} />
           </CtaCardContent>
         </CtaCard>
       )}
@@ -154,8 +145,8 @@ export default function AnnouncementsPage() {
               colSpan: importantAnnouncements.length === 1 ? 2 : undefined,
               hasPersistentHover: true
             }))}
-            onEdit={isManagementMode ? handleEditAnnouncement : undefined}
             onDelete={isManagementMode ? handleDeleteAnnouncement : undefined}
+            onSuccess={isManagementMode ? handleAllAnnouncementsOnLoad : undefined}
             showActions={isManagementMode}
           />
         </div>
@@ -171,25 +162,14 @@ export default function AnnouncementsPage() {
           )}
           <AnnouncementBentoGrid
             items={regularAnnouncements}
-            onEdit={isManagementMode ? handleEditAnnouncement : undefined}
             onDelete={isManagementMode ? handleDeleteAnnouncement : undefined}
+            onSuccess={isManagementMode ? handleAllAnnouncementsOnLoad : undefined}
             showActions={isManagementMode}
           />
         </div>
       )}
 
       {/* Modals */}
-      <CreateAnnouncementModal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        onSuccess={handleAllAnnouncementsOnLoad}
-      />
-      <EditAnnouncementModal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        announcement={selectedAnnouncement}
-        onSuccess={handleAllAnnouncementsOnLoad}
-      />
       <DeleteAnnouncementDialog
         isOpen={isDeleteDialogOpen}
         onClose={() => setIsDeleteDialogOpen(false)}

@@ -21,7 +21,6 @@ export default function WorkshopsPage() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
-  const [showCreateModal, setShowCreateModal] = useState(false)
 
   const loadWorkshops = async () => {
     setLoading(true)
@@ -96,10 +95,7 @@ export default function WorkshopsPage() {
               Manual Entry
             </Button>
           </Link>
-          <Button onClick={() => setShowCreateModal(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Workshop
-          </Button>
+          <CreateWorkshopModal onSuccess={loadWorkshops} />
         </div>
       </div>
 
@@ -269,21 +265,13 @@ export default function WorkshopsPage() {
                 : "Get started by creating your first workshop"}
             </p>
             {!searchQuery && statusFilter === "all" && (
-              <Button onClick={() => setShowCreateModal(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Create Your First Workshop
-              </Button>
+              <CreateWorkshopModal onSuccess={loadWorkshops} />
             )}
           </CtaCardContent>
         </CtaCard>
       )}
 
-      {/* Create Workshop Modal */}
-      <CreateWorkshopModal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        onSuccess={loadWorkshops}
-      />
+      {/* No modals needed - using modern modal pattern */}
     </div>
   )
 }

@@ -226,9 +226,15 @@ export function SimpleManualEventForm({ onComplete, eventId }: SimpleManualEvent
   }
 
   const addTeam = () => {
+    const newTeam = { 
+      id: `temp-${Date.now()}`, 
+      name: "", 
+      members: [], 
+      attended: true 
+    }
     setFormData((prev) => ({
       ...prev,
-      teams: [...prev.teams, { id: `temp-${Date.now()}`, name: "", members: [], attended: true }],
+      teams: [...prev.teams, newTeam],
     }))
   }
 

@@ -33,7 +33,6 @@ export default function CoreTournamentsPage() {
   const [showPreloader, setShowPreloader] = useState(true)
   const [loading, setLoading] = useState(true)
   const [tournaments, setTournaments] = useState<any[]>([])
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [processingTournament, setProcessingTournament] = useState<string | null>(null)
 
   const loadTournaments = useCallback(async () => {
@@ -150,10 +149,7 @@ export default function CoreTournamentsPage() {
           <h1 className="text-3xl font-bold text-neon">Tournament Management</h1>
           <p className="text-muted-foreground">Create and manage tournaments</p>
         </div>
-        <Button onClick={() => setIsCreateModalOpen(true)} className="glow-blue">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Tournament
-        </Button>
+        <CreateTournamentModal onSuccess={loadTournaments} />
       </div>
 
       {/* Statistics */}
@@ -215,10 +211,7 @@ export default function CoreTournamentsPage() {
             <Trophy className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-xl font-semibold mb-2">No tournaments yet</h3>
             <p className="text-muted-foreground mb-4">Create your first tournament to get started</p>
-            <Button onClick={() => setIsCreateModalOpen(true)} className="glow-blue">
-              <Plus className="h-4 w-4 mr-2" />
-              Create Tournament
-            </Button>
+            <CreateTournamentModal onSuccess={loadTournaments} />
           </CardContent>
         </Card>
       ) : (
@@ -371,12 +364,7 @@ export default function CoreTournamentsPage() {
         </div>
       )}
 
-      {/* Create Tournament Modal */}
-      <CreateTournamentModal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        onSuccess={loadTournaments}
-      />
+      {/* No modals needed - using modern modal pattern */}
     </div>
   )
 }

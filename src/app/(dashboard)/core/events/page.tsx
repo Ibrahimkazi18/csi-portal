@@ -1,13 +1,11 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Plus, Calendar, Edit, Trash2, AlertCircle, Settings, Trophy, Clock, MapPin, Users, User } from "lucide-react"
+import { Calendar, AlertCircle, Settings, Trophy, Clock, MapPin, Users, User } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
 import { CreateEventModal } from "./components/create-event-modal"
-import { EditEventModal } from "./components/edit-event-modal"
 import { DeleteEventDialog } from "./components/delete-event-modal"
 import { EventRoundsModal } from "./components/event-rounds-modal"
 import { deleteEvent, getEvents, getRegisteredTeams } from "./actions"
@@ -21,8 +19,6 @@ export default function EventsPage() {
   const [showPreloader, setShowPreloader] = useState(true)
   const [loadingData, setLoadingData] = useState(true)
   const [events, setEvents] = useState<any[]>([])
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isRoundsModalOpen, setIsRoundsModalOpen] = useState(false)
   const [selectedEvent, setSelectedEvent] = useState<any>(null)
@@ -82,7 +78,6 @@ export default function EventsPage() {
 
   const handleEditEvent = (event: any) => {
     setSelectedEvent(event)
-    setIsEditModalOpen(true)
   }
 
   const handleDeleteEvent = (event: any) => {
@@ -167,10 +162,7 @@ export default function EventsPage() {
             <Settings className="h-4 w-4 mr-2" />
             {isManagementMode ? "Exit Management" : "Manage Events"}
           </Button>
-          <Button className="glow-blue" onClick={() => setIsCreateModalOpen(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Event
-          </Button>
+          <CreateEventModal onSuccess={handleEventsOnLoad} />
         </div>
       </div>
 
@@ -191,10 +183,7 @@ export default function EventsPage() {
               <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium mb-2">No events yet</h3>
               <p className="text-muted-foreground mb-4">Create your first event to get started!</p>
-              <Button onClick={() => setIsCreateModalOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Create First Event
-              </Button>
+              <CreateEventModal onSuccess={handleEventsOnLoad} />
             </div>
           ) : (
             <MorphingCardStack
@@ -207,12 +196,12 @@ export default function EventsPage() {
                     event={event}
                     registeredTeams={registeredTeams[event.id] || []}
                     isManagementMode={isManagementMode}
-                    onEdit={handleEditEvent}
                     onDelete={handleDeleteEvent}
                     onManageRounds={handleManageRounds}
                     onViewRegistrations={(id) => router.push(`/core/events/${id}/registrations`)}
                     onViewLive={(id) => router.push(`/core/events/${id}/live`)}
                     onViewResults={(id) => router.push(`/core/events/${id}/result`)}
+                    onSuccess={handleEventsOnLoad}
                   />
                 )
               }))}
@@ -245,9 +234,9 @@ export default function EventsPage() {
                       event={event}
                       registeredTeams={registeredTeams[event.id] || []}
                       isManagementMode={true}
-                      onEdit={handleEditEvent}
                       onDelete={handleDeleteEvent}
                       onManageRounds={handleManageRounds}
+                      onSuccess={handleEventsOnLoad}
                       compact
                     />
                   ))}
@@ -259,17 +248,6 @@ export default function EventsPage() {
       )}
 
       {/* Modals */}
-      <CreateEventModal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        onSuccess={handleEventsOnLoad}
-      />
-      <EditEventModal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        event={selectedEvent}
-        onSuccess={handleEventsOnLoad}
-      />
       <DeleteEventDialog
         isOpen={isDeleteDialogOpen}
         onClose={() => setIsDeleteDialogOpen(false)}
