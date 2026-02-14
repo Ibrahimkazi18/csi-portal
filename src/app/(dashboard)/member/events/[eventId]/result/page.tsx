@@ -23,10 +23,13 @@ import { toast } from "sonner"
 import { useParams } from "next/navigation"
 import Link from "next/link"
 import { getEventResults } from "./actions"
+import Preloader from "@/components/ui/preloader"
 
 export default function EventResultsPage() {
   const params = useParams()
   const eventId = params.eventId as string
+
+  const [showPreloader, setShowPreloader] = useState(true)
   const [loading, setLoading] = useState(true)
   const [eventData, setEventData] = useState<any>(null)
   const [refreshing, setRefreshing] = useState(false)
@@ -55,11 +58,21 @@ export default function EventResultsPage() {
     toast.success("Data refreshed")
   }
 
-
-
   useEffect(() => {
     loadEventData()
   }, [loadEventData])
+
+  const handlePreloaderComplete = useCallback(() => {
+    setShowPreloader(false)
+  }, [])
+
+  if (showPreloader) {
+    return (
+      <div className="relative w-full h-screen">
+        <Preloader onComplete={handlePreloaderComplete} />
+      </div>
+    )
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {

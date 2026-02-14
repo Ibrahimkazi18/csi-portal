@@ -23,12 +23,13 @@ import { toast } from "sonner"
 import { useParams } from "next/navigation"
 import Link from "next/link"
 import { getMemberLiveEventData, getUserEventStatus } from "./actions"
-import { LiveEventPageSkeleton } from "../../components/live-event-skeleton"
+import Preloader from "@/components/ui/preloader"
 
 export default function MemberLiveEventPage() {
   const params = useParams()
   const eventId = params.eventId as string
 
+  const [showPreloader, setShowPreloader] = useState(true)
   const [loading, setLoading] = useState(true)
   const [eventData, setEventData] = useState<any>(null)
   const [userStatus, setUserStatus] = useState<any>(null)
@@ -63,6 +64,18 @@ export default function MemberLiveEventPage() {
     const interval = setInterval(loadEventData, 30000)
     return () => clearInterval(interval)
   }, [loadEventData])
+
+  const handlePreloaderComplete = useCallback(() => {
+    setShowPreloader(false)
+  }, [])
+
+  if (showPreloader) {
+    return (
+      <div className="relative w-full h-screen">
+        <Preloader onComplete={handlePreloaderComplete} />
+      </div>
+    )
+  } 
 
   const getParticipantsInRound = (roundId: string | null) => {
     if (roundId === null) {
@@ -150,10 +163,6 @@ export default function MemberLiveEventPage() {
         )}
       </div>
     )
-  }
-
-  if (loading) {
-    return <LiveEventPageSkeleton />
   }
 
   if (!eventData) {
