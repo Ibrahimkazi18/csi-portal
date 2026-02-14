@@ -1,22 +1,177 @@
 "use client"
 
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Calendar, Users, MapPin, Clock, ExternalLink, Edit, Trash2 } from "lucide-react"
+import { Calendar, Users, MapPin, Clock, Edit, Trash2, Trophy, User, AlertCircle } from "lucide-react"
 import { getManualEvents, deleteManualEvent } from "@/app/actions/manual-events"
 import Link from "next/link"
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
-import { ManualEventCreator } from "./manual-event-creator"
-import { ComprehensiveManualEventFlow } from "./comprehensive-manual-event-flow"
+import { SimpleManualEventForm } from "./simple-manual-event-form"
+import { cn } from "@/lib/utils"
+
+function ManualEventCard({ event, onEdit, onDelete, deletingEventId }: any) {
+  const [isHovered, setIsHovered] = useState(false)
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "finalized":
+        return "bg-green-500/20 text-green-400 border-green-500/30"
+      case "draft":
+        return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
+      default:
+        return "bg-gray-500/20 text-gray-400 border-gray-500/30"
+    }
+  }
+
+  const participantCount = (() => {
+    if (event.type === 'team') {
+      return event.event_registrations?.filter((reg: any) => reg.registration_type === 'team').length || 0
+    } else {
+      const individualFromRegistrations = event.event_registrations?.filter((reg: any) => reg.registration_type === 'individual').length || 0
+      const individualFromParticipants = event.event_participants?.length || 0
+      return Math.max(individualFromRegistrations, individualFromParticipants)
+    }
+  })()
+
+  return (
+    <div 
+      className="rounded-xl border bg-card shadow-sm transition-all duration-300 overflow-hidden group hover:shadow-lg"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* Gradient Background */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(99,102,241,0.03)_0%,transparent_70%)] opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+      
+      <div className="relative p-6">
+        {/* Header */}
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-2">
+              <h3 className="font-semibold text-lg line-clamp-1">{event.title}</h3>
+              {event.is_tournament && (
+                <Badge variant="outline" className="bg-yellow-500/20 text-yellow-400 border-yellow-500/30 text-xs">
+                  <Trophy className="h-3 w-3 mr-1" />
+                  Tournament
+                </Badge>
+              )}
+            </div>
+            <p className="text-sm text-muted-foreground line-clamp-2">{event.description}</p>
+          </div>
+        </div>
+
+        {/* Status and Type Badges */}
+        <div className="flex items-center gap-2 mb-4">
+          <Badge variant="outline" className={cn("text-xs", getStatusColor(event.manual_status || 'draft'))}>
+            {event.manual_status === 'finalized' ? 'Finalized' : 'Draft'}
+          </Badge>
+          <Badge variant="outline" className="text-xs capitalize">
+            {event.mode}
+          </Badge>
+          <Badge variant="outline" className="text-xs capitalize">
+            {event.category}
+          </Badge>
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            {event.type === "team" ? <Users className="h-3 w-3" /> : <User className="h-3 w-3" />}
+            <span className="capitalize">{event.type}</span>
+          </div>
+        </div>
+
+        {/* Event Details Grid */}
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Calendar className="h-4 w-4" />
+            <span>{new Date(event.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+          </div>
+          
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            {event.type === 'team' ? <Users className="h-4 w-4" /> : <User className="h-4 w-4" />}
+            <span>{participantCount} {event.type === 'team' ? 'teams' : 'participants'}</span>
+          </div>
+
+          {event.venue && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <MapPin className="h-4 w-4" />
+              <span className="truncate">{event.venue}</span>
+            </div>
+          )}
+
+          {event.duration && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Clock className="h-4 w-4" />
+              <span>{event.duration} min</span>
+            </div>
+          )}
+        </div>
+
+        {/* Hosts */}
+        {event.workshop_hosts && event.workshop_hosts.length > 0 && (
+          <div className="mb-4 p-3 rounded-lg bg-muted/30 border border-border/50">
+            <p className="text-xs font-medium text-muted-foreground mb-2">Hosts:</p>
+            <div className="flex flex-wrap gap-2">
+              {event.workshop_hosts.map((host: any, index: number) => (
+                <Badge key={index} variant="secondary" className="text-xs">
+                  {host.name}
+                  {host.designation && ` (${host.designation})`}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className={cn(
+          "flex items-center justify-between pt-4 border-t border-border/50 transition-opacity duration-200",
+          isHovered ? "opacity-100" : "opacity-70"
+        )}>
+          <span className="text-xs text-muted-foreground">
+            Created {new Date(event.created_at).toLocaleDateString()}
+          </span>
+          
+          <div className="flex items-center gap-2">
+            {event.manual_status === 'draft' && (
+              <>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => onEdit(event.id)}
+                  className="h-8"
+                >
+                  <Edit className="h-4 w-4 mr-1" />
+                  Edit
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => onDelete(event.id)}
+                  disabled={deletingEventId === event.id}
+                  className="h-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  {deletingEventId === event.id ? 'Deleting...' : 'Delete'}
+                </Button>
+              </>
+            )}
+            
+            {event.manual_status === 'finalized' && (
+              <Button variant="default" size="sm" asChild className="h-8">
+                <Link href={`/core/events/${event.id}/result`}>
+                  View Results
+                </Link>
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export function ManualEventsList() {
   const [events, setEvents] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [editingEventId, setEditingEventId] = useState<string | null>(null)
   const [deletingEventId, setDeletingEventId] = useState<string | null>(null)
-  const [useComprehensiveFlow, setUseComprehensiveFlow] = useState(true) // Default to new flow
 
   const loadEvents = async () => {
     setLoading(true)
@@ -47,7 +202,7 @@ export function ManualEventsList() {
     
     if (result.success) {
       toast.success('Event deleted successfully')
-      loadEvents() // Refresh the list
+      loadEvents()
     } else {
       toast.error(result.error || 'Failed to delete event')
     }
@@ -56,7 +211,7 @@ export function ManualEventsList() {
 
   const handleEditComplete = () => {
     setEditingEventId(null)
-    loadEvents() // Refresh the list
+    loadEvents()
   }
 
   if (editingEventId) {
@@ -68,17 +223,10 @@ export function ManualEventsList() {
             Back to List
           </Button>
         </div>
-        {useComprehensiveFlow ? (
-          <ComprehensiveManualEventFlow 
-            eventId={editingEventId} 
-            onComplete={handleEditComplete}
-          />
-        ) : (
-          <ManualEventCreator 
-            eventId={editingEventId} 
-            onComplete={handleEditComplete}
-          />
-        )}
+        <SimpleManualEventForm 
+          eventId={editingEventId} 
+          onComplete={handleEditComplete}
+        />
       </div>
     )
   }
@@ -93,148 +241,61 @@ export function ManualEventsList() {
 
   if (events.length === 0) {
     return (
-      <div className="text-center py-8">
+      <div className="text-center py-12">
+        <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
         <p className="text-sm text-muted-foreground">No manual events created yet</p>
+        <p className="text-xs text-muted-foreground mt-1">Create your first manual event above</p>
       </div>
     )
   }
 
+  // Separate events by status
+  const finalizedEvents = events.filter(e => e.manual_status === 'finalized')
+  const draftEvents = events.filter(e => e.manual_status !== 'finalized')
+
   return (
-    <div className="space-y-4">
-      {events.map((event: any) => (
-        <Card key={event.id} className="border-border/40">
-          <CardHeader className="pb-3">
-            <div className="flex items-start justify-between">
-              <div className="space-y-1">
-                <CardTitle className="text-base font-semibold">{event.title}</CardTitle>
-                <CardDescription className="text-sm">
-                  {event.description.length > 100 
-                    ? `${event.description.substring(0, 100)}...` 
-                    : event.description
-                  }
-                </CardDescription>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge 
-                  variant={event.manual_status === 'finalized' ? 'default' : 'secondary'}
-                  className="text-xs"
-                >
-                  {event.manual_status || 'draft'}
-                </Badge>
-                <Badge variant="outline" className="text-xs">
-                  {event.mode}
-                </Badge>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Calendar className="h-4 w-4" />
-                <span>{new Date(event.start_date).toLocaleDateString()}</span>
-              </div>
-              
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Users className="h-4 w-4" />
-                <span>
-                  {(() => {
-                    // Count participants based on event type and data structure
-                    if (event.type === 'team') {
-                      // For team events, count teams from event_registrations
-                      const teamCount = event.event_registrations?.filter((reg: any) => reg.registration_type === 'team').length || 0
-                      return `${teamCount} teams`
-                    } else {
-                      // For individual events, count from event_registrations first, then event_participants as fallback
-                      const individualFromRegistrations = event.event_registrations?.filter((reg: any) => reg.registration_type === 'individual').length || 0
-                      const individualFromParticipants = event.event_participants?.length || 0
-                      
-                      // Use the higher count (in case both exist) or fallback to 0
-                      const totalIndividuals = Math.max(individualFromRegistrations, individualFromParticipants)
-                      return `${totalIndividuals} participants`
-                    }
-                  })()}
-                </span>
-              </div>
+    <div className="space-y-6">
+      {/* Finalized Events */}
+      {finalizedEvents.length > 0 && (
+        <div>
+          <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
+            <Trophy className="h-4 w-4" />
+            Finalized Events ({finalizedEvents.length})
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {finalizedEvents.map((event) => (
+              <ManualEventCard
+                key={event.id}
+                event={event}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                deletingEventId={deletingEventId}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
-              {event.venue && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <MapPin className="h-4 w-4" />
-                  <span className="truncate">{event.venue}</span>
-                </div>
-              )}
-
-              {event.duration && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Clock className="h-4 w-4" />
-                  <span>{event.duration} minutes</span>
-                </div>
-              )}
-            </div>
-
-            {event.workshop_hosts && event.workshop_hosts.length > 0 && (
-              <div className="mt-3 pt-3 border-t border-border/40">
-                <p className="text-xs text-muted-foreground mb-2">Hosts:</p>
-                <div className="flex flex-wrap gap-2">
-                  {event.workshop_hosts.map((host: any, index: number) => (
-                    <Badge key={index} variant="secondary" className="text-xs">
-                      {host.name}
-                      {host.designation && ` (${host.designation})`}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="mt-4 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className="text-xs">
-                  {event.category}
-                </Badge>
-                <Badge variant="outline" className="text-xs">
-                  {event.type}
-                </Badge>
-                <span className="text-xs text-muted-foreground">
-                  Created {new Date(event.created_at).toLocaleDateString()}
-                </span>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                {event.manual_status === 'draft' && (
-                  <>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => handleEdit(event.id)}
-                    >
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => handleDelete(event.id)}
-                      disabled={deletingEventId === event.id}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      {deletingEventId === event.id ? 'Deleting...' : 'Delete'}
-                    </Button>
-                  </>
-                )}
-                
-                {event.manual_status === 'finalized' && (
-                  <Button variant="ghost" size="sm" asChild>
-                    <Link href={`/core/events/${event.id}/result`}>
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      View Event
-                    </Link>
-                  </Button>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+      {/* Draft Events */}
+      {draftEvents.length > 0 && (
+        <div>
+          <h3 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
+            <Edit className="h-4 w-4" />
+            Draft Events ({draftEvents.length})
+          </h3>
+          <div className="space-y-4">
+            {draftEvents.map((event) => (
+              <ManualEventCard
+                key={event.id}
+                event={event}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                deletingEventId={deletingEventId}
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
