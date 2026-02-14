@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import Preloader from "@/components/ui/preloader"
 
 const ITEMS_PER_PAGE = 10
 
@@ -37,6 +38,7 @@ const ROLE_ORDER: { [key: string]: number } = {
 }
 
 export default function MembersPage() {
+  const [showPreloader, setShowPreloader] = useState(true)
   const [members, setMembers] = useState<any[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [sortBy, setSortBy] = useState<"full_name" | "role" | "created_at" | "member_role">("member_role")
@@ -73,8 +75,12 @@ export default function MembersPage() {
   useEffect(() => {
     fetchAllMembers()
   }, [fetchAllMembers]);
-  
-  // Filter and sort members
+
+  const handlePreloaderComplete = useCallback(() => {
+    setShowPreloader(false)
+  }, [])
+
+  // Filter and sort members - MUST be before any conditional returns
   const filteredAndSortedMembers = useMemo(() => {
     let filtered = members.filter((member) => {
       const matchesSearch =
@@ -128,6 +134,14 @@ export default function MembersPage() {
   useEffect(() => {
     setCurrentPage(1)
   }, [searchTerm, viewMode, sortBy])
+
+  if (showPreloader) {
+    return (
+      <div className="relative w-full h-screen">
+        <Preloader onComplete={handlePreloaderComplete} />
+      </div>
+    )
+  }
 
   const handleOpenEditModal = (member: Member) => {
     setSelectedMember(member)

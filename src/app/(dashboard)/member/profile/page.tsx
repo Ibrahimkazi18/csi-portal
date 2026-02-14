@@ -12,12 +12,12 @@ import { EditBioModal } from "./components/edit-bio-modal"
 import { UpdateAvatarModal } from "./components/update-avatar-modal"
 import { AccountSettingsModal } from "./components/account-settings-modal"
 import { AchievementsSection } from "./components/achievements-section"
-import ProfileLoadingSkeleton from "./components/profile-skeleton"
 import SearcgProfileModal from "./components/search-profile-modal"
 import { motion } from "framer-motion"
 import { CtaCard, CtaCardHeader, CtaCardTitle, CtaCardDescription, CtaCardContent } from "@/components/ui/cta-card"
 import { StatCard } from "@/components/profile/stat-card"
 import { ProfileFolder } from "@/components/profile/profile-folder"
+import Preloader from "@/components/ui/preloader"
 
 interface ProfileData {
   id: string
@@ -41,6 +41,7 @@ interface ProfileData {
 
 
 export default function ProfilePage() {
+  const [showPreloader, setShowPreloader] = useState(true)
   const [loading, setLoading] = useState(true)
   const [profileData, setProfileData] = useState<ProfileData | null>(null)
   const [editBioOpen, setEditBioOpen] = useState(false)
@@ -73,10 +74,18 @@ export default function ProfilePage() {
     loadProfileData()
   }, [loadProfileData])
 
-  if (loading) {
-    return <ProfileLoadingSkeleton />
-  }
+  const handlePreloaderComplete = useCallback(() => {
+    setShowPreloader(false)
+  }, [])
 
+  if (showPreloader) {
+    return (
+      <div className="relative w-full h-screen">
+        <Preloader onComplete={handlePreloaderComplete} />
+      </div>
+    )
+  }
+  
   if (!profileData) {
     return (
       <div className="text-center py-12">

@@ -25,11 +25,13 @@ import { toast } from "sonner"
 import Link from "next/link"
 import { useParams } from "next/navigation"
 import { createAttendanceSheet, getEventRegistrations } from "../../actions"
+import Preloader from "@/components/ui/preloader"
 
 export default function EventRegistrationsPage() {
   const params = useParams()
   const eventId = params.eventId as string
 
+  const [showPreloader, setShowPreloader] = useState(true)
   const [loadingData, setLoadingData] = useState(true)
   const [eventData, setEventData] = useState<any>(null)
   const [registrationsData, setRegistrationsData] = useState<any>({
@@ -67,6 +69,18 @@ export default function EventRegistrationsPage() {
     handleRegistrationsOnLoad()
   }, [handleRegistrationsOnLoad])
 
+  const handlePreloaderComplete = useCallback(() => {
+    setShowPreloader(false)
+  }, [])
+
+  if (showPreloader) {
+    return (
+      <div className="relative w-full h-screen">
+        <Preloader onComplete={handlePreloaderComplete} />
+      </div>
+    )
+  }
+
   const getTeamCompletionPercentage = (currentMembers: number, requiredMembers: number) => {
     return Math.round((currentMembers / requiredMembers) * 100)
   }
@@ -95,10 +109,6 @@ export default function EventRegistrationsPage() {
       default:
         return User
     }
-  }
-
-  if (loadingData) {
-    return <div className="text-center py-8 text-muted-foreground">Loading registrations...</div>
   }
 
   const handleCreateAttendanceSheet = async () => {

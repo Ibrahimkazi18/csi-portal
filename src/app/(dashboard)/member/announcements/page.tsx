@@ -1,15 +1,15 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
 import { AlertCircle } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
 import { getAnnouncements, updateLastSeenAnnoucement } from "./actions"
-import { AnnouncementsPageSkeleton } from "./components/announcements-skeleton"
 import { AnnouncementBentoGrid } from "@/components/ui/announcement-bento-grid"
 import { CtaCard, CtaCardContent } from "@/components/ui/cta-card"
+import Preloader from "@/components/ui/preloader"
 
 export default function AnnouncementsPage() {
+  const [showPreloader, setShowPreloader] = useState(true)
   const [loadingData, setLoadingData] = useState(true)
   const [announcements, setAnnouncements] = useState<any[]>([])
 
@@ -51,8 +51,16 @@ export default function AnnouncementsPage() {
   const importantAnnouncements = announcements.filter(a => a.is_important)
   const regularAnnouncements = announcements.filter(a => !a.is_important)
 
-  if (loadingData) {
-    return <AnnouncementsPageSkeleton />
+  const handlePreloaderComplete = useCallback(() => {
+    setShowPreloader(false)
+  }, [])
+
+  if (showPreloader) {
+    return (
+      <div className="relative w-full h-screen">
+        <Preloader onComplete={handlePreloaderComplete} />
+      </div>
+    )
   }
 
   return (

@@ -9,9 +9,10 @@ import { toast } from "sonner"
 import { useParams } from "next/navigation"
 import Link from "next/link"
 import { getTournamentLeaderboard, getTournamentDetails } from "../../actions"
-import { TournamentLeaderboardSkeleton } from "../../components/tournament-skeleton"
+import Preloader from "@/components/ui/preloader"
 
 export default function TournamentLeaderboardPage() {
+  const [showPreloader, setShowPreloader] = useState(true)
   const params = useParams()
   const tournamentId = params.tournamentId as string
   const [loading, setLoading] = useState(true)
@@ -50,6 +51,18 @@ export default function TournamentLeaderboardPage() {
     loadData()
   }, [loadData])
 
+  const handlePreloaderComplete = useCallback(() => {
+    setShowPreloader(false)
+  }, [])
+
+  if (showPreloader) {
+    return (
+      <div className="relative w-full h-screen">
+        <Preloader onComplete={handlePreloaderComplete} />
+      </div>
+    )
+  }
+
   const getPositionIcon = (position: number) => {
     switch (position) {
       case 1:
@@ -87,10 +100,6 @@ export default function TournamentLeaderboardPage() {
       default:
         return "bg-muted/10 border-border"
     }
-  }
-
-  if (loading) {
-    return <TournamentLeaderboardSkeleton />
   }
 
   return (

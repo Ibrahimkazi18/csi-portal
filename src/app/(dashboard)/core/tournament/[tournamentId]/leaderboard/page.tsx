@@ -9,10 +9,13 @@ import { toast } from "sonner"
 import { useParams } from "next/navigation"
 import Link from "next/link"
 import { getTournamentLeaderboard, getTournamentDetails, getTotalEvents } from "../../actions"
+import Preloader from "@/components/ui/preloader"
 
 export default function TournamentLeaderboardPage() {
   const params = useParams()
   const tournamentId = params.tournamentId as string
+
+  const [showPreloader, setShowPreloader] = useState(true)
   const [loading, setLoading] = useState(true)
   const [leaderboard, setLeaderboard] = useState<any[]>([])
   const [tournament, setTournament] = useState<any>(null)
@@ -55,6 +58,18 @@ export default function TournamentLeaderboardPage() {
     loadData()
   }, [loadData])
 
+  const handlePreloaderComplete = useCallback(() => {
+    setShowPreloader(false)
+  }, [])
+
+  if (showPreloader) {
+    return (
+      <div className="relative w-full h-screen">
+        <Preloader onComplete={handlePreloaderComplete} />
+      </div>
+    )
+  }
+
   const getPositionIcon = (position: number) => {
     switch (position) {
       case 1:
@@ -92,10 +107,6 @@ export default function TournamentLeaderboardPage() {
       default:
         return "bg-muted/10 border-border"
     }
-  }
-
-  if (loading) {
-    return <div className="text-center py-8 text-muted-foreground">Loading leaderboard...</div>
   }
 
   return (

@@ -6,11 +6,12 @@ import { toast } from "sonner"
 import { fetchGuideSections } from "./actions"
 import { PostgrestError } from "@supabase/supabase-js"
 import { iconMap } from "../../core/guide/constants"
-import GuideLoadingSkeleton from "./components/guide-skeleton"
 import { ExpandableGuideSection } from "@/components/ui/expandable-guide-section"
 import { CtaCard, CtaCardHeader, CtaCardTitle, CtaCardDescription, CtaCardContent } from "@/components/ui/cta-card"
+import Preloader from "@/components/ui/preloader"
 
 export default function GuidePage() {
+  const [showPreloader, setShowPreloader] = useState(true)
   const [guideContents, setGuideContents] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
 
@@ -38,10 +39,18 @@ export default function GuidePage() {
   }, [fetchGuides])
 
 
-  if(loading) {
-    return <GuideLoadingSkeleton />  
-  }
+  const handlePreloaderComplete = useCallback(() => {
+    setShowPreloader(false)
+  }, [])
 
+  if (showPreloader) {
+    return (
+      <div className="relative w-full h-screen">
+        <Preloader onComplete={handlePreloaderComplete} />
+      </div>
+    )
+  }
+  
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">

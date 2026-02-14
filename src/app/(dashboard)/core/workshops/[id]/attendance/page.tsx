@@ -1,30 +1,27 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useState, useEffect, useCallback } from "react"
+import { useParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle, Save, Download, ArrowLeft, Users } from "lucide-react"
+import { CheckCircle, Save, ArrowLeft, Users } from "lucide-react"
 import { toast } from "sonner"
 import * as attendanceActions from "./actions"
 import Link from "next/link"
+import Preloader from "@/components/ui/preloader"
 
 export default function WorkshopAttendancePage() {
   const params = useParams()
-  const router = useRouter()
   const workshopId = params.id as string
 
+  const [showPreloader, setShowPreloader] = useState(true)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [workshop, setWorkshop] = useState<any>(null)
   const [participants, setParticipants] = useState<any[]>([])
   const [attendanceMap, setAttendanceMap] = useState<Record<string, boolean>>({})
-
-  useEffect(() => {
-    loadAttendance()
-  }, [workshopId])
 
   const loadAttendance = async () => {
     setLoading(true)
@@ -46,6 +43,23 @@ export default function WorkshopAttendancePage() {
     
     setLoading(false)
   }
+
+  useEffect(() => {
+    loadAttendance()
+  }, [workshopId])
+
+  const handlePreloaderComplete = useCallback(() => {
+    setShowPreloader(false)
+  }, [])
+
+  if (showPreloader) {
+    return (
+      <div className="relative w-full h-screen">
+        <Preloader onComplete={handlePreloaderComplete} />
+      </div>
+    )
+  }
+
 
   const toggleAttendance = (participantId: string) => {
     setAttendanceMap(prev => ({
@@ -95,10 +109,6 @@ export default function WorkshopAttendancePage() {
   const attendanceRate = totalCount > 0
     ? Math.round((attendedCount / totalCount) * 100)
     : 0
-
-  if (loading) {
-    return <div className="text-center py-8">Loading attendance sheet...</div>
-  }
 
   return (
     <div className="space-y-6">

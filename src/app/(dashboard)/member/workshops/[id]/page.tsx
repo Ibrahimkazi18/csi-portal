@@ -1,24 +1,26 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 import {
-  Calendar, Users, Clock, MapPin,
-  Link as LinkIcon, CheckCircle, XCircle, ArrowLeft
+  Calendar, Users,
+  Link as LinkIcon, CheckCircle, ArrowLeft
 } from "lucide-react"
 import { toast } from "sonner"
 import { getWorkshopDetails, registerForWorkshop, cancelRegistration } from "./actions"
 import Link from "next/link"
+import Preloader from "@/components/ui/preloader"
 
 export default function MemberWorkshopDetailsPage() {
   const params = useParams()
   const router = useRouter()
   const workshopId = params.id as string
 
+  const [showPreloader, setShowPreloader] = useState(true)
   const [loading, setLoading] = useState(true)
   const [workshop, setWorkshop] = useState<any>(null)
   const [registering, setRegistering] = useState(false)
@@ -68,10 +70,18 @@ export default function MemberWorkshopDetailsPage() {
     }
   }
 
-  if (loading) {
-    return <div className="text-center py-8">Loading...</div>
-  }
+  const handlePreloaderComplete = useCallback(() => {
+    setShowPreloader(false)
+  }, [])
 
+  if (showPreloader) {
+    return (
+      <div className="relative w-full h-screen">
+        <Preloader onComplete={handlePreloaderComplete} />
+      </div>
+    )
+  }
+  
   const {
     event,
     hosts,

@@ -8,7 +8,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Shield, Edit, Save, X } from 'lucide-react';
 import { getMemberRoles, getMembers, getProfileUser, updateMemberRole } from './actions';
 import { toast } from 'sonner';
+import Preloader from '@/components/ui/preloader';
+
 export default function RolesPage() {
+  const [showPreloader, setShowPreloader] = useState(true)
   const [members, setMembers] = useState<any[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [tempRole, setTempRole] = useState<string>('');
@@ -74,6 +77,18 @@ export default function RolesPage() {
   useEffect(() => {
     fetchAllMembersAndRoles()
   }, [fetchAllMembersAndRoles]);
+
+  const handlePreloaderComplete = useCallback(() => {
+    setShowPreloader(false)
+  }, [])
+
+  if (showPreloader) {
+    return (
+      <div className="relative w-full h-screen">
+        <Preloader onComplete={handlePreloaderComplete} />
+      </div>
+    )
+  }
 
   const handleEditRole = (memberId: string, currentRole: string) => {
     setEditingId(memberId);

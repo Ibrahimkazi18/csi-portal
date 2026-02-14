@@ -26,9 +26,10 @@ import {
   respondToTournamentApplication,
 } from "../actions"
 import { CreateTournamentTeamModal } from "../components/create-tournament-team-modal"
-import { TournamentDetailsSkeleton } from "../components/tournament-skeleton"
+import Preloader from "@/components/ui/preloader"
 
 export default function TournamentDetailsPage() {
+  const [showPreloader, setShowPreloader] = useState(true)
   const params = useParams()
   const tournamentId = params.tournamentId as string
   const [loading, setLoading] = useState(true)
@@ -85,6 +86,18 @@ export default function TournamentDetailsPage() {
     loadData()
   }, [loadData])
 
+  const handlePreloaderComplete = useCallback(() => {
+    setShowPreloader(false)
+  }, [])
+
+  if (showPreloader) {
+    return (
+      <div className="relative w-full h-screen">
+        <Preloader onComplete={handlePreloaderComplete} />
+      </div>
+    )
+  }
+
   const handleApplyToTeam = async (teamId: string) => {
     setApplyingToTeam(teamId)
     try {
@@ -132,10 +145,6 @@ export default function TournamentDetailsPage() {
       default:
         return "bg-gray-500/20 text-gray-400 border-gray-500/30"
     }
-  }
-
-  if (loading) {
-    return <TournamentDetailsSkeleton />
   }
 
   if (!tournamentData) {

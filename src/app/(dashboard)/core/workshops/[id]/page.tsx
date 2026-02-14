@@ -1,13 +1,13 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 import {
-  Edit, Trash2, Users, Calendar, MapPin,
+  Edit, Users, Calendar,
   Link as LinkIcon, CheckCircle, UserCheck, ArrowLeft
 } from "lucide-react"
 import { EditWorkshopModal } from "@/components/workshops/edit-workshop-modal"
@@ -15,21 +15,19 @@ import Link from "next/link"
 import { toast } from "sonner"
 import { completeWorkshop, getWorkshopDetails } from "./actions"
 import { DeleteWorkshopButton } from "@/components/workshops/DeleteWorkshopButton"
+import Preloader from "@/components/ui/preloader"
 
 export default function WorkshopDetailsPage() {
   const params = useParams()
   const router = useRouter()
   const workshopId = params.id as string
 
+  const [showPreloader, setShowPreloader] = useState(true)
   const [loading, setLoading] = useState(true)
   const [workshop, setWorkshop] = useState<any>(null)
   const [completing, setCompleting] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
-
-  useEffect(() => {
-    loadWorkshop()
-  }, [workshopId])
-
+  
   const loadWorkshop = async () => {
     setLoading(true)
     const response = await getWorkshopDetails(workshopId)
@@ -42,6 +40,22 @@ export default function WorkshopDetailsPage() {
 
     setWorkshop(response.data)
     setLoading(false)
+  }
+
+  useEffect(() => {
+    loadWorkshop()
+  }, [workshopId])
+
+  const handlePreloaderComplete = useCallback(() => {
+    setShowPreloader(false)
+  }, [])
+
+  if (showPreloader) {
+    return (
+      <div className="relative w-full h-screen">
+        <Preloader onComplete={handlePreloaderComplete} />
+      </div>
+    )
   }
 
   const handleCompleteWorkshop = async () => {

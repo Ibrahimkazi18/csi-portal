@@ -10,8 +10,10 @@ import { EditAnnouncementModal } from "./components/edit-announcement-modal"
 import { DeleteAnnouncementDialog } from "./components/delete-announcement-modal"
 import { AnnouncementBentoGrid } from "@/components/ui/announcement-bento-grid"
 import { CtaCard, CtaCardContent } from "@/components/ui/cta-card"
+import Preloader from "@/components/ui/preloader"
 
 export default function AnnouncementsPage() {
+  const [showPreloader, setShowPreloader] = useState(true)
   const [loadingData, setLoadingData] = useState(true)
   const [announcements, setAnnouncements] = useState<any[]>([])
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
@@ -48,6 +50,18 @@ export default function AnnouncementsPage() {
   useEffect(() => {
     handleAllAnnouncementsOnLoad()
   }, [handleAllAnnouncementsOnLoad])
+
+  const handlePreloaderComplete = useCallback(() => {
+    setShowPreloader(false)
+  }, [])
+
+  if (showPreloader) {
+    return (
+      <div className="relative w-full h-screen">
+        <Preloader onComplete={handlePreloaderComplete} />
+      </div>
+    )
+  }
 
   const handleEditAnnouncement = (announcement: any) => {
     setSelectedAnnouncement(announcement)

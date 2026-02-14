@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,19 +11,17 @@ import { CreateWorkshopModal } from "@/components/workshops/create-workshop-moda
 import { toast } from "sonner"
 import { MorphingCardStack } from "@/components/ui/morphing-card-stack"
 import { WorkshopCardCore } from "@/components/workshops/workshop-card-core"
-import { CtaCard, CtaCardHeader, CtaCardTitle, CtaCardDescription, CtaCardContent } from "@/components/ui/cta-card"
+import { CtaCard, CtaCardContent } from "@/components/ui/cta-card"
 import { BentoGrid, BentoCard, BentoCardHeader, BentoCardTitle, BentoCardContent } from "@/components/ui/bento-grid"
+import Preloader from "@/components/ui/preloader"
 
 export default function WorkshopsPage() {
+  const [showPreloader, setShowPreloader] = useState(true)
   const [workshops, setWorkshops] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [showCreateModal, setShowCreateModal] = useState(false)
-
-  useEffect(() => {
-    loadWorkshops()
-  }, [])
 
   const loadWorkshops = async () => {
     setLoading(true)
@@ -36,6 +34,22 @@ export default function WorkshopsPage() {
     }
     
     setLoading(false)
+  }
+
+  useEffect(() => {
+    loadWorkshops()
+  }, [])
+
+  const handlePreloaderComplete = useCallback(() => {
+    setShowPreloader(false)
+  }, [])
+
+  if (showPreloader) {
+    return (
+      <div className="relative w-full h-screen">
+        <Preloader onComplete={handlePreloaderComplete} />
+      </div>
+    )
   }
 
   const filteredWorkshops = workshops.filter(w => {
@@ -59,10 +73,6 @@ export default function WorkshopsPage() {
       case "upcoming": return "outline"
       default: return "outline"
     }
-  }
-
-  if (loading) {
-    return <div className="text-center py-8">Loading workshops...</div>
   }
 
   return (

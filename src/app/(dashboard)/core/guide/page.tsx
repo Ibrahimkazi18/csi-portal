@@ -12,8 +12,10 @@ import { iconMap } from "./constants"
 import { ExpandableGuideSection } from "@/components/ui/expandable-guide-section"
 import { CtaCard, CtaCardHeader, CtaCardTitle, CtaCardDescription, CtaCardContent } from "@/components/ui/cta-card"
 import { Button } from "@/components/ui/button"
+import Preloader from "@/components/ui/preloader"
 
 export default function GuidePage() {
+  const [showPreloader, setShowPreloader] = useState(true)
   const [guideContents, setGuideContents] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
@@ -44,6 +46,18 @@ export default function GuidePage() {
   useEffect(() => {
     fetchGuides()
   }, [fetchGuides])
+
+  const handlePreloaderComplete = useCallback(() => {
+    setShowPreloader(false)
+  }, [])
+
+  if (showPreloader) {
+    return (
+      <div className="relative w-full h-screen">
+        <Preloader onComplete={handlePreloaderComplete} />
+      </div>
+    )
+  }
 
   const handleEditSection = (section: any) => {
     setSelectedSection(section)

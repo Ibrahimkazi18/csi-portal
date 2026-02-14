@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -10,16 +10,14 @@ import { getAvailableWorkshops, getMyWorkshops } from "./actions"
 import { MorphingCardStack } from "@/components/ui/morphing-card-stack"
 import { WorkshopCardModern } from "@/components/workshops/workshop-card-modern"
 import { CtaCard, CtaCardHeader, CtaCardTitle, CtaCardDescription, CtaCardContent } from "@/components/ui/cta-card"
+import Preloader from "@/components/ui/preloader"
 
 export default function MemberWorkshopsPage() {
+  const [showPreloader, setShowPreloader] = useState(true)
   const [availableWorkshops, setAvailableWorkshops] = useState<any[]>([])
   const [myWorkshops, setMyWorkshops] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
-
-  useEffect(() => {
-    loadWorkshops()
-  }, [])
 
   const loadWorkshops = async () => {
     setLoading(true)
@@ -39,6 +37,23 @@ export default function MemberWorkshopsPage() {
 
     setLoading(false)
   }
+  
+  useEffect(() => {
+    loadWorkshops()
+  }, [])
+
+  const handlePreloaderComplete = useCallback(() => {
+    setShowPreloader(false)
+  }, [])
+
+  if (showPreloader) {
+    return (
+      <div className="relative w-full h-screen">
+        <Preloader onComplete={handlePreloaderComplete} />
+      </div>
+    )
+  }
+
 
   const filteredAvailable = availableWorkshops.filter(w =>
     w.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -48,10 +63,6 @@ export default function MemberWorkshopsPage() {
   const filteredMine = myWorkshops.filter(w =>
     w.title.toLowerCase().includes(searchQuery.toLowerCase())
   )
-
-  if (loading) {
-    return <div className="text-center py-8">Loading workshops...</div>
-  }
 
   return (
     <div className="space-y-6">

@@ -21,10 +21,13 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import Preloader from "@/components/ui/preloader"
 
 export default function TournamentManagementPage() {
   const params = useParams()
   const tournamentId = params.tournamentId as string
+
+  const [showPreloader, setShowPreloader] = useState(true)
   const [loading, setLoading] = useState(true)
   const [tournamentData, setTournamentData] = useState<any>(null)
   const [isPointsModalOpen, setIsPointsModalOpen] = useState(false)
@@ -55,6 +58,18 @@ export default function TournamentManagementPage() {
   useEffect(() => {
     loadTournamentData()
   }, [loadTournamentData])
+
+  const handlePreloaderComplete = useCallback(() => {
+    setShowPreloader(false)
+  }, [])
+
+  if (showPreloader) {
+    return (
+      <div className="relative w-full h-screen">
+        <Preloader onComplete={handlePreloaderComplete} />
+      </div>
+    )
+  }
 
   const handleUpdatePoints = async () => {
     if (!selectedTeam || pointsForm.points === 0) {
@@ -123,10 +138,6 @@ export default function TournamentManagementPage() {
       default:
         return "text-muted-foreground"
     }
-  }
-
-  if (loading) {
-    return <div className="text-center py-8 text-muted-foreground">Loading tournament data...</div>
   }
 
   if (!tournamentData) {

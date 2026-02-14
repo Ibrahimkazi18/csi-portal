@@ -27,8 +27,10 @@ import {
 } from "@/components/ui/alert-dialog"
 import { CreateTournamentModal } from "./components/create-tournament-modal"
 import Link from "next/link"
+import Preloader from "@/components/ui/preloader"
 
 export default function CoreTournamentsPage() {
+  const [showPreloader, setShowPreloader] = useState(true)
   const [loading, setLoading] = useState(true)
   const [tournaments, setTournaments] = useState<any[]>([])
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
@@ -56,6 +58,18 @@ export default function CoreTournamentsPage() {
   useEffect(() => {
     loadTournaments()
   }, [loadTournaments])
+
+  const handlePreloaderComplete = useCallback(() => {
+    setShowPreloader(false)
+  }, [])
+
+  if (showPreloader) {
+    return (
+      <div className="relative w-full h-screen">
+        <Preloader onComplete={handlePreloaderComplete} />
+      </div>
+    )
+  }
 
   const handleStatusChange = async (tournamentId: string, action: string) => {
     setProcessingTournament(tournamentId)
@@ -126,10 +140,6 @@ export default function CoreTournamentsPage() {
       default:
         return Clock
     }
-  }
-
-  if (loading) {
-    return <div className="text-center py-8 text-muted-foreground">Loading tournaments...</div>
   }
 
   return (

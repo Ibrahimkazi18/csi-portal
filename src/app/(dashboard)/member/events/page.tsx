@@ -5,12 +5,13 @@ import { UserPlus, Clock, Trophy, AlertCircle, RefreshCcw, Disc } from "lucide-r
 import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
 import { getAllEvents } from "./actions"
-import { EventsPageSkeleton } from "./components/events-skeleton"
 import { MorphingCardStack, type LayoutMode } from "@/components/ui/morphing-card-stack"
 import { EventCardModern } from "@/components/events/event-card-modern"
 import { CtaCard, CtaCardHeader, CtaCardTitle, CtaCardDescription, CtaCardContent } from "@/components/ui/cta-card"
+import Preloader from "@/components/ui/preloader"
 
 export default function MemberEventsPage() {
+  const [showPreloader, setShowPreloader] = useState(true)
   const [loadingData, setLoadingData] = useState(true)
   const [eventsData, setEventsData] = useState<any>({
     registrationOpen: [],
@@ -42,9 +43,21 @@ export default function MemberEventsPage() {
     handleAllEventsOnLoad()
   }, [handleAllEventsOnLoad])
 
-  if(loadingData) {
-    return <EventsPageSkeleton />
+  const handlePreloaderComplete = useCallback(() => {
+    setShowPreloader(false)
+  }, [])
+
+  if (showPreloader) {
+    return (
+      <div className="relative w-full h-screen">
+        <Preloader onComplete={handlePreloaderComplete} />
+      </div>
+    )
   }
+
+  // if(loadingData) {
+  //   return <EventsPageSkeleton />
+  // }
 
   return (
     <div className="space-y-6">

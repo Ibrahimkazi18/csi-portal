@@ -37,16 +37,19 @@ import {
   respondToApplication,
   getYourRegisteredTeam,
   isUserRegistered,
+  debugTeamMembers,
 } from "../actions"
 import { EventRegistrationModal } from "../components/event-registration-modal"
 import Link from "next/link"
 import { useParams } from "next/navigation"
-import { EventDetailsPageSkeleton } from "../components/event-details-skeleton"
+import ErrorBoundary from "@/components/error-boundary"
+import Preloader from "@/components/ui/preloader"
 
-export default function EventDetailsPage() {
+function EventDetailsPageContent() {
   const params = useParams()
   const eventId = params.eventId as string
 
+  const [showPreloader, setShowPreloader] = useState(true)
   const [loadingData, setLoadingData] = useState(true)
   const [eventData, setEventData] = useState<any>(null)
   const [invitationData, setInvitationData] = useState<any[]>([])
@@ -77,31 +80,39 @@ export default function EventDetailsPage() {
       if (!eventResponse.success) {
         throw new Error(eventResponse.message || "Failed to fetch event details")
       }
+      
+      // Add debugging logs
+      console.log("Event data:", eventResponse.data)
+      console.log("Registrations:", eventResponse.data?.registrations)
+      
+      // Debug team members
+      await debugTeamMembers(eventId)
+      
       setEventData(eventResponse.data)
 
-      if (invitationResponse.data) {
+      if (invitationResponse.success && invitationResponse.data) {
         setInvitationData(invitationResponse.data)
-    }
+      }
     
-    if (applicationResponse.data) {
+      if (applicationResponse.success && applicationResponse.data) {
         setApplicationData(applicationResponse.data)
-    }
+      }
 
-    if(isUserResponse.userRegistered) {
+      if(isUserResponse.success && isUserResponse.userRegistered) {
         setUserAlreadyInTeam(true);
-    }
+      }
 
-    if (teamsResponse.data) {
+      if (teamsResponse.success && teamsResponse.data) {
         setTeamsNeedingMembers(teamsResponse.data)
-    }
+      }
 
-    if (myTeamApplicationResponse.data) {
+      if (myTeamApplicationResponse.success && myTeamApplicationResponse.data) {
         setmyTeamApplicationData(myTeamApplicationResponse.data)
-    }
+      }
 
-    if(registrationResponse.registration) {
+      if(registrationResponse.success && registrationResponse.registration) {
         setRegistrationData(registrationResponse.registration)
-    }
+      }
 
     } catch (error: any) {
       console.error("Failed to fetch event details:", error)
@@ -116,6 +127,18 @@ export default function EventDetailsPage() {
   useEffect(() => {
     handleEventDetailsOnLoad()
   }, [handleEventDetailsOnLoad])
+
+  const handlePreloaderComplete = useCallback(() => {
+    setShowPreloader(false)
+  }, [])
+
+  if (showPreloader) {
+    return (
+      <div className="relative w-full h-screen">
+        <Preloader onComplete={handlePreloaderComplete} />
+      </div>
+    )
+  }
 
   const handleRegisterForEvent = () => {
     setIsRegistrationModalOpen(true)
@@ -256,11 +279,7 @@ export default function EventDetailsPage() {
     }
   }
 
-  if (loadingData) {
-    return <EventDetailsPageSkeleton />
-  }
-
-  if (!eventData) {
+  if (!eventData || !eventData.event) {
     return (
       <div className="text-center py-8">
         <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -276,17 +295,17 @@ export default function EventDetailsPage() {
     )
   }
 
-  const { event, rounds, registrations, winners } = eventData
-  const StatusIcon = getStatusIcon(event.status)
-  const isRegistrationDeadlinePassed = new Date(event.registration_deadline) < new Date()
+  const { event, rounds, registrations, winners } = eventData || {}
+  const StatusIcon = getStatusIcon(event?.status || 'unknown')
+  const isRegistrationDeadlinePassed = event?.registration_deadline ? new Date(event.registration_deadline) < new Date() : true
 
-  // Filter invitations and applications for this specific event
-  const eventSpecificInvitations = invitationData.filter((invitation) =>
-    invitation.event_id === event.id,
+  // Filter invitations and applications for this specific event with null safety
+  const eventSpecificInvitations = (invitationData || []).filter((invitation) =>
+    invitation && invitation.event_id === event?.id,
   )
 
-  const eventSpecificApplications = applicationData.filter((application) =>
-    application.event_id === event.id,
+  const eventSpecificApplications = (applicationData || []).filter((application) =>
+    application && application.event_id === event?.id,
   )
 
   return (
@@ -395,7 +414,7 @@ export default function EventDetailsPage() {
       </Card>
 
       {/* Event Rounds */}
-      {rounds.length > 0 && (
+      {(rounds || []).length > 0 && (
         <Card className="bg-dark-surface border-border">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -405,7 +424,7 @@ export default function EventDetailsPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {rounds.map((round: any, index: number) => (
+              {(rounds || []).map((round: any, index: number) => (
                 <div key={round.id} className="p-4 rounded-lg border border-border bg-muted/10">
                   <div className="flex items-center gap-2 mb-2">
                     <Badge variant="outline" className="text-xs">
@@ -438,22 +457,22 @@ export default function EventDetailsPage() {
                         {registrationData.registration_type === "team" ? (
                             <div>
                             <div className="flex items-center gap-2 mb-2">
-                                <h4 className="font-medium">{registrationData.teams?.name}</h4>
+                                <h4 className="font-medium">{registrationData.teams?.name || "Unknown Team"}</h4>
                                 <Badge variant="outline" className="text-xs">
                                 Team
                                 </Badge>
                             </div>
                             <div className="flex flex-wrap gap-2">
-                                {registrationData.teams?.team_members?.map((member: any, index: number) => (
+                                {(registrationData.teams?.team_members || []).map((member: any, index: number) => (
                                 <Badge key={index} variant="secondary" className="text-xs">
-                                    {member.profiles?.full_name}
+                                    {member?.profiles?.full_name || "Unknown Member"}
                                 </Badge>
                                 ))}
                             </div>
                             </div>
                         ) : (
                             <div className="flex items-center gap-2">
-                            <h4 className="font-medium">{registrationData.profiles?.full_name}</h4>
+                            <h4 className="font-medium">{registrationData.profiles?.full_name || "Unknown Participant"}</h4>
                             <Badge variant="outline" className="text-xs">
                                 Individual
                             </Badge>
@@ -465,68 +484,77 @@ export default function EventDetailsPage() {
           )}
 
           {/* Team Applications For this Team For your Team */}
-          {myTeamApplicationData.length > 0 && (
+          {(myTeamApplicationData || []).length > 0 && (
             <Card className="bg-dark-surface border-border glow-blue">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Bell className="h-5 w-5 text-primary" />
                   Your Team Applications for this Event
                   <Badge variant="destructive" className="ml-2">
-                    {myTeamApplicationData.length}
+                    {(myTeamApplicationData || []).length}
                   </Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {myTeamApplicationData.map((application: any) => (
-                    <div
-                      key={application.id}
-                      className="p-4 rounded-lg border border-border bg-muted/10 hover:bg-muted/20 transition-colors"
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <div>
-                          <h4 className="font-medium">{application.teams?.name}</h4>
-                          <p className="text-sm text-muted-foreground">
-                            Raised By{" "}
-                            <span className="font-medium">{application.teams.profiles?.full_name || "Team Leader"}</span>
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">{application.teams.description}</p>
+                  {(myTeamApplicationData || []).map((application: any) => {
+                    // Defensive null checking
+                    const team = application?.teams || {};
+                    const teamName = team?.name || "Unknown Team";
+                    const teamLeader = team?.profiles?.full_name || "Team Leader";
+                    const teamDescription = team?.description || "";
+                    const teamMembers = team?.team_members || [];
+                    
+                    return (
+                      <div
+                        key={application.id}
+                        className="p-4 rounded-lg border border-border bg-muted/10 hover:bg-muted/20 transition-colors"
+                      >
+                        <div className="flex items-start justify-between mb-3">
+                          <div>
+                            <h4 className="font-medium">{teamName}</h4>
+                            <p className="text-sm text-muted-foreground">
+                              Raised By{" "}
+                              <span className="font-medium">{teamLeader}</span>
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">{teamDescription}</p>
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {new Date(application.created_at).toLocaleDateString()}
+                          </div>
                         </div>
-                        <div className="text-xs text-muted-foreground">
-                          {new Date(application.created_at).toLocaleDateString()}
+
+                        <div className="flex items-center justify-between">
+                          <div className="flex flex-wrap gap-2">
+                            {teamMembers.map((member: any, index: number) => (
+                              <Badge key={index} variant="secondary" className="text-xs">
+                                {member?.profiles?.full_name || "Unknown Member"}
+                              </Badge>
+                            ))}
+                          </div>
+
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => handleApplicationResponse(application.id, true)}
+                              disabled={processingApplication === application.id}
+                              className="glow-green"
+                            >
+                              Accept
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleApplicationResponse(application.id, false)}
+                              disabled={processingApplication === application.id}
+                            >
+                              Decline
+                            </Button>
+                          </div>
                         </div>
                       </div>
-
-                      <div className="flex items-center justify-between">
-                        <div className="flex flex-wrap gap-2">
-                          {application.teams.team_members?.map((member: any, index: number) => (
-                            <Badge key={index} variant="secondary" className="text-xs">
-                              {member?.full_name}
-                            </Badge>
-                          ))}
-                        </div>
-
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            onClick={() => handleApplicationResponse(application.id, true)}
-                            disabled={processingApplication === application.id}
-                            className="glow-green"
-                          >
-                            Accept
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleApplicationResponse(application.id, false)}
-                            disabled={processingApplication === application.id}
-                          >
-                            Decline
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>
@@ -542,117 +570,143 @@ export default function EventDetailsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {registrations.length === 0 ? (
+              {(registrations || []).length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p>No registrations yet. Be the first to register!</p>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {registrations.map((registration: any) => (
-                    <div
-                      key={registration.id}
-                      className="p-4 rounded-lg border border-border bg-muted/10 hover:bg-muted/20 transition-colors"
-                    >
-                      {registration.registration_type === "team" ? (
-                        <div>
-                          <div className="flex items-center gap-2 mb-2">
-                            <h4 className="font-medium">{registration.teams?.name}</h4>
+                  {(registrations || []).map((registration: any) => {
+                    // Defensive null checking
+                    const team = registration?.teams || {};
+                    const profile = registration?.profiles || {};
+                    
+                    // Debug logging
+                    console.log("Registration:", registration);
+                    console.log("Team:", team);
+                    console.log("Team members:", team?.team_members);
+                    
+                    return (
+                      <div
+                        key={registration.id}
+                        className="p-4 rounded-lg border border-border bg-muted/10 hover:bg-muted/20 transition-colors"
+                      >
+                        {registration.registration_type === "team" ? (
+                          <div>
+                            <div className="flex items-center gap-2 mb-2">
+                              <h4 className="font-medium">{team?.name || "Unknown Team"}</h4>
+                              <Badge variant="outline" className="text-xs">
+                                Team
+                              </Badge>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              {(team?.team_members || []).length > 0 ? (
+                                (team.team_members || []).map((member: any, index: number) => (
+                                  <Badge key={index} variant="secondary" className="text-xs">
+                                    {member?.profiles?.full_name || `Member ${index + 1}`}
+                                  </Badge>
+                                ))
+                              ) : (
+                                <Badge variant="secondary" className="text-xs">
+                                  No members data
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-medium">{profile?.full_name || "Unknown Participant"}</h4>
                             <Badge variant="outline" className="text-xs">
-                              Team
+                              Individual
                             </Badge>
                           </div>
-                          <div className="flex flex-wrap gap-2">
-                            {registration.teams?.team_members?.map((member: any, index: number) => (
-                              <Badge key={index} variant="secondary" className="text-xs">
-                                {member?.full_name}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-medium">{registration.profiles?.full_name}</h4>
-                          <Badge variant="outline" className="text-xs">
-                            Individual
-                          </Badge>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </CardContent>
           </Card>
 
           {/* Team Invitations for this Event */}
-          {eventSpecificInvitations.length > 0 && (
+          {(eventSpecificInvitations || []).length > 0 && (
             <Card className="bg-dark-surface border-border glow-blue">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Bell className="h-5 w-5 text-primary" />
                   Your Team Invitations for this Event
                   <Badge variant="destructive" className="ml-2">
-                    {eventSpecificInvitations.length}
+                    {(eventSpecificInvitations || []).length}
                   </Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {eventSpecificInvitations.map((invitation: any) => (
-                    <div
-                      key={invitation.id}
-                      className="p-4 rounded-lg border border-border bg-muted/10 hover:bg-muted/20 transition-colors"
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <div>
-                          <h4 className="font-medium">{invitation.teams.name}</h4>
-                          <p className="text-sm text-muted-foreground">
-                            Invited by{" "}
-                            <span className="font-medium">{invitation.teams.profiles?.full_name || "Team Leader"}</span>
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">{invitation.teams.description}</p>
+                  {(eventSpecificInvitations || []).map((invitation: any) => {
+                    // Defensive null checking
+                    const team = invitation?.teams || {};
+                    const teamName = team?.name || "Unknown Team";
+                    const teamLeader = team?.profiles?.full_name || "Team Leader";
+                    const teamDescription = team?.description || "";
+                    const teamMembers = team?.team_members || [];
+                    
+                    return (
+                      <div
+                        key={invitation.id}
+                        className="p-4 rounded-lg border border-border bg-muted/10 hover:bg-muted/20 transition-colors"
+                      >
+                        <div className="flex items-start justify-between mb-3">
+                          <div>
+                            <h4 className="font-medium">{teamName}</h4>
+                            <p className="text-sm text-muted-foreground">
+                              Invited by{" "}
+                              <span className="font-medium">{teamLeader}</span>
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">{teamDescription}</p>
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {new Date(invitation.created_at).toLocaleDateString()}
+                          </div>
                         </div>
-                        <div className="text-xs text-muted-foreground">
-                          {new Date(invitation.created_at).toLocaleDateString()}
+                        <div className="flex items-center justify-between">
+                          <div className="flex flex-wrap gap-2">
+                            {teamMembers.map((member: any, index: number) => (
+                              <Badge key={index} variant="secondary" className="text-xs">
+                                {member?.profiles?.full_name || "Unknown Member"}
+                              </Badge>
+                            ))}
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => handleInvitationResponse(invitation.id, true)}
+                              disabled={processingInvitation === invitation.id}
+                              className="glow-green"
+                            >
+                              Accept
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleInvitationResponse(invitation.id, false)}
+                              disabled={processingInvitation === invitation.id}
+                            >
+                              Decline
+                            </Button>
+                          </div>
                         </div>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex flex-wrap gap-2">
-                          {invitation.teams.team_members?.map((member: any, index: number) => (
-                            <Badge key={index} variant="secondary" className="text-xs">
-                              {member.profiles?.full_name}
-                            </Badge>
-                          ))}
-                        </div>
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            onClick={() => handleInvitationResponse(invitation.id, true)}
-                            disabled={processingInvitation === invitation.id}
-                            className="glow-green"
-                          >
-                            Accept
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleInvitationResponse(invitation.id, false)}
-                            disabled={processingInvitation === invitation.id}
-                          >
-                            Decline
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>
           )}
 
           {/* Teams Needing Members */}
-          {event.type === "team" && teamsNeedingMembers.length > 0 && !userAlreadyInTeam && (
+          {event?.type === "team" && (teamsNeedingMembers || []).length > 0 && !userAlreadyInTeam && (
             <Card className="bg-dark-surface border-border">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -665,49 +719,57 @@ export default function EventDetailsPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {teamsNeedingMembers.map((team: any) => (
-                    <div
-                      key={team.id}
-                      className="p-4 rounded-lg border border-border bg-muted/10 hover:bg-muted/20 transition-colors"
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <div>
-                          <h4 className="font-medium">{team.name}</h4>
-                          <p className="text-sm text-muted-foreground">
-                            Leader: <span className="font-medium">{team.profiles?.full_name}</span>
-                          </p>
-                          <p className="text-sm text-muted-foreground">{team.description}</p>
+                  {(teamsNeedingMembers || []).map((team: any) => {
+                    // Defensive null checking
+                    const teamName = team?.name || "Unknown Team";
+                    const teamLeader = team?.profiles?.full_name || "Unknown Leader";
+                    const teamDescription = team?.description || "";
+                    const teamMembers = team?.team_members || [];
+                    
+                    return (
+                      <div
+                        key={team.id}
+                        className="p-4 rounded-lg border border-border bg-muted/10 hover:bg-muted/20 transition-colors"
+                      >
+                        <div className="flex items-start justify-between mb-3">
+                          <div>
+                            <h4 className="font-medium">{teamName}</h4>
+                            <p className="text-sm text-muted-foreground">
+                              Leader: <span className="font-medium">{teamLeader}</span>
+                            </p>
+                            <p className="text-sm text-muted-foreground">{teamDescription}</p>
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {teamMembers.length}/{event?.team_size || 0} members
+                          </div>
                         </div>
-                        <div className="text-xs text-muted-foreground">
-                          {team.team_members?.length || 0}/{event.team_size} members
+                        <div className="flex items-center justify-between">
+                          <div className="flex flex-wrap gap-2">
+                            {teamMembers.map((member: any, index: number) => (
+                              <Badge key={index} variant="secondary" className="text-xs">
+                                {member?.profiles?.full_name || "Unknown Member"}
+                              </Badge>
+                            ))}
+                          </div>
+                          <Button
+                            size="sm"
+                            onClick={() => handleApplyToTeam(team.id)}
+                            disabled={applyingToTeam === team.id}
+                            className="glow-blue"
+                          >
+                            {applyingToTeam === team.id ? "Applying..." : "Apply to Join"}
+                          </Button>
                         </div>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex flex-wrap gap-2">
-                          {team.team_members?.map((member: any, index: number) => (
-                            <Badge key={index} variant="secondary" className="text-xs">
-                              {member.profiles?.full_name}
-                            </Badge>
-                          ))}
-                        </div>
-                        <Button
-                          size="sm"
-                          onClick={() => handleApplyToTeam(team.id)}
-                          disabled={applyingToTeam === team.id}
-                          className="glow-blue"
-                        >
-                          {applyingToTeam === team.id ? "Applying..." : "Apply to Join"}
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>
           )}
 
           {/* Your Team Applications for this Event */}
-          {eventSpecificApplications.length > 0 && (
+          {(eventSpecificApplications || []).length > 0 && (
             <Card className="bg-dark-surface border-border">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -717,8 +779,15 @@ export default function EventDetailsPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {eventSpecificApplications.map((application: any) => {
+                  {(eventSpecificApplications || []).map((application: any) => {
                     const StatusIcon = getApplicationStatusIcon(application.status)
+                    // Defensive null checking
+                    const team = application?.teams || {};
+                    const teamName = team?.name || "Unknown Team";
+                    const teamLeader = team?.profiles?.full_name || "Unknown Leader";
+                    const teamDescription = team?.description || "";
+                    const teamMembers = team?.team_members || [];
+                    
                     return (
                       <div
                         key={application.id}
@@ -727,7 +796,7 @@ export default function EventDetailsPage() {
                         <div className="flex items-start justify-between mb-3">
                           <div>
                             <div className="flex items-center gap-2 mb-1">
-                              <h4 className="font-medium">{application.teams.name}</h4>
+                              <h4 className="font-medium">{teamName}</h4>
                               <Badge
                                 variant="outline"
                                 className={`text-xs ${getApplicationStatusColor(application.status)}`}
@@ -737,18 +806,18 @@ export default function EventDetailsPage() {
                               </Badge>
                             </div>
                             <p className="text-sm text-muted-foreground">
-                              Leader: <span className="font-medium">{application.teams.profiles?.full_name}</span>
+                              Leader: <span className="font-medium">{teamLeader}</span>
                             </p>
-                            <p className="text-xs text-muted-foreground mt-1">{application.teams.description}</p>
+                            <p className="text-xs text-muted-foreground mt-1">{teamDescription}</p>
                           </div>
                           <div className="text-xs text-muted-foreground">
                             {new Date(application.created_at).toLocaleDateString()}
                           </div>
                         </div>
                         <div className="flex flex-wrap gap-2">
-                          {application.teams.team_members?.map((member: any, index: number) => (
+                          {teamMembers.map((member: any, index: number) => (
                             <Badge key={index} variant="secondary" className="text-xs">
-                              {member.profiles?.full_name}
+                              {member?.profiles?.full_name || "Unknown Member"}
                             </Badge>
                           ))}
                         </div>
@@ -763,10 +832,10 @@ export default function EventDetailsPage() {
       )}
 
       {/* Completed Event Specific Content */}
-      {event.status === "completed" && (
+      {event?.status === "completed" && (
         <>
           {/* Winners */}
-          {winners.length > 0 && (
+          {(winners || []).length > 0 && (
             <Card className="bg-dark-surface border-border glow-yellow">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -776,8 +845,13 @@ export default function EventDetailsPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {winners.map((winner: any) => {
+                  {(winners || []).map((winner: any) => {
                     const PositionIcon = getPositionIcon(winner.position)
+                    // Defensive null checking
+                    const team = winner?.teams || {};
+                    const profile = winner?.profiles || {};
+                    const teamMembers = team?.team_members || [];
+                    
                     return (
                       <div
                         key={winner.id}
@@ -800,17 +874,17 @@ export default function EventDetailsPage() {
                             </div>
                             {winner.team_id ? (
                               <div>
-                                <h4 className="font-medium">{winner.teams?.name}</h4>
+                                <h4 className="font-medium">{team?.name || "Unknown Team"}</h4>
                                 <div className="flex flex-wrap gap-2 mt-1">
-                                  {winner.teams?.team_members?.map((member: any, index: number) => (
+                                  {teamMembers.map((member: any, index: number) => (
                                     <Badge key={index} variant="secondary" className="text-xs">
-                                      {member.profiles?.full_name}
+                                      {member?.profiles?.full_name || "Unknown Member"}
                                     </Badge>
                                   ))}
                                 </div>
                               </div>
                             ) : (
-                              <h4 className="font-medium">{winner.profiles?.full_name}</h4>
+                              <h4 className="font-medium">{profile?.full_name || "Unknown Winner"}</h4>
                             )}
                           </div>
                         </div>
@@ -832,37 +906,54 @@ export default function EventDetailsPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {registrations.map((registration: any) => (
-                  <div
-                    key={registration.id}
-                    className="p-4 rounded-lg border border-border bg-muted/10 hover:bg-muted/20 transition-colors"
-                  >
-                    {registration.registration_type === "team" ? (
-                      <div>
-                        <div className="flex items-center gap-2 mb-2">
-                          <h4 className="font-medium">{registration.teams?.name}</h4>
+                {(registrations || []).map((registration: any) => {
+                  // Defensive null checking
+                  const team = registration?.teams || {};
+                  const profile = registration?.profiles || {};
+                  const teamMembers = team?.team_members || [];
+                  
+                  // Debug logging
+                  console.log("All Participants - Registration:", registration);
+                  console.log("All Participants - Team members:", teamMembers);
+                  
+                  return (
+                    <div
+                      key={registration.id}
+                      className="p-4 rounded-lg border border-border bg-muted/10 hover:bg-muted/20 transition-colors"
+                    >
+                      {registration.registration_type === "team" ? (
+                        <div>
+                          <div className="flex items-center gap-2 mb-2">
+                            <h4 className="font-medium">{team?.name || "Unknown Team"}</h4>
+                            <Badge variant="outline" className="text-xs">
+                              Team
+                            </Badge>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {teamMembers.length > 0 ? (
+                              teamMembers.map((member: any, index: number) => (
+                                <Badge key={index} variant="secondary" className="text-xs">
+                                  {member?.profiles?.full_name || `Member ${index + 1}`}
+                                </Badge>
+                              ))
+                            ) : (
+                              <Badge variant="secondary" className="text-xs">
+                                No members data
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-medium">{profile?.full_name || "Unknown Participant"}</h4>
                           <Badge variant="outline" className="text-xs">
-                            Team
+                            Individual
                           </Badge>
                         </div>
-                        <div className="flex flex-wrap gap-2">
-                          {registration.teams?.team_members?.map((member: any, index: number) => (
-                            <Badge key={index} variant="secondary" className="text-xs">
-                              {member.profiles?.full_name}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-medium">{registration.profiles?.full_name}</h4>
-                        <Badge variant="outline" className="text-xs">
-                          Individual
-                        </Badge>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
@@ -877,5 +968,13 @@ export default function EventDetailsPage() {
         onSuccess={handleEventDetailsOnLoad}
       />
     </div>
+  )
+}
+
+export default function EventDetailsPage() {
+  return (
+    <ErrorBoundary>
+      <EventDetailsPageContent />
+    </ErrorBoundary>
   )
 }

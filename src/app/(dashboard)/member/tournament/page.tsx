@@ -16,9 +16,10 @@ import {
 } from "./actions"
 import { CreateTournamentTeamModal } from "./components/create-tournament-team-modal"
 import Link from "next/link"
-import { TournamentListSkeleton } from "./components/tournament-skeleton"
+import Preloader from "@/components/ui/preloader"
 
 export default function MemberTournamentsPage() {
+  const [showPreloader, setShowPreloader] = useState(true)
   const [loading, setLoading] = useState(true)
   const [tournaments, setTournaments] = useState<any[]>([])
   const [invitations, setInvitations] = useState<any[]>([])
@@ -77,6 +78,18 @@ export default function MemberTournamentsPage() {
     loadData()
   }, [loadData])
 
+  const handlePreloaderComplete = useCallback(() => {
+    setShowPreloader(false)
+  }, [])
+
+  if (showPreloader) {
+    return (
+      <div className="relative w-full h-screen">
+        <Preloader onComplete={handlePreloaderComplete} />
+      </div>
+    )
+  }
+
   const handleInvitationResponse = async (invitationId: string, accept: boolean) => {
     setProcessingInvitation(invitationId)
     try {
@@ -127,10 +140,6 @@ export default function MemberTournamentsPage() {
       default:
         return Clock
     }
-  }
-
-  if (loading) {
-    return <TournamentListSkeleton />
   }
 
   return (

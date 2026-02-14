@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -18,20 +18,18 @@ import { Download, Search, CheckCircle, XCircle, ArrowLeft } from "lucide-react"
 import * as registrationActions from "./actions"
 import { toast } from "sonner"
 import Link from "next/link"
+import Preloader from "@/components/ui/preloader"
 
 export default function WorkshopRegistrationsPage() {
   const params = useParams()
   const workshopId = params.id as string
 
+  const [showPreloader, setShowPreloader] = useState(true)
   const [loading, setLoading] = useState(true)
   const [workshop, setWorkshop] = useState<any>(null)
   const [registrations, setRegistrations] = useState<any[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [exporting, setExporting] = useState(false)
-
-  useEffect(() => {
-    loadRegistrations()
-  }, [workshopId])
 
   const loadRegistrations = async () => {
     setLoading(true)
@@ -45,6 +43,22 @@ export default function WorkshopRegistrationsPage() {
     }
     
     setLoading(false)
+  }
+
+  useEffect(() => {
+    loadRegistrations()
+  }, [workshopId])
+
+  const handlePreloaderComplete = useCallback(() => {
+    setShowPreloader(false)
+  }, [])
+
+  if (showPreloader) {
+    return (
+      <div className="relative w-full h-screen">
+        <Preloader onComplete={handlePreloaderComplete} />
+      </div>
+    )
   }
 
   const handleExport = async () => {

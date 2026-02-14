@@ -15,8 +15,10 @@ import { useRouter } from "next/navigation"
 import { MorphingCardStack, type LayoutMode } from "@/components/ui/morphing-card-stack"
 import { EventCardCore } from "@/components/events/event-card-core"
 import { CtaCard, CtaCardHeader, CtaCardTitle, CtaCardDescription, CtaCardContent } from "@/components/ui/cta-card"
+import Preloader from "@/components/ui/preloader"
 
 export default function EventsPage() {
+  const [showPreloader, setShowPreloader] = useState(true)
   const [loadingData, setLoadingData] = useState(true)
   const [events, setEvents] = useState<any[]>([])
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
@@ -66,6 +68,17 @@ export default function EventsPage() {
     handleEventsOnLoad()
   }, [handleEventsOnLoad])
 
+  const handlePreloaderComplete = useCallback(() => {
+    setShowPreloader(false)
+  }, [])
+
+  if (showPreloader) {
+    return (
+      <div className="relative w-full h-screen">
+        <Preloader onComplete={handlePreloaderComplete} />
+      </div>
+    )
+  }
 
   const handleEditEvent = (event: any) => {
     setSelectedEvent(event)

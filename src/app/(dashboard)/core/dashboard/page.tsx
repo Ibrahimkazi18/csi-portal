@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useMemo } from "react"
+import { useEffect, useState, useMemo, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -20,6 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import Preloader from "@/components/ui/preloader"
 
 interface DashboardStats {
   totalEvents: number
@@ -54,6 +55,7 @@ const ROLE_ORDER: { [key: string]: number } = {
 }
 
 export default function CoreDashboardPage() {
+  const [showPreloader, setShowPreloader] = useState(true)
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [activity, setActivity] = useState<any[]>([])
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([])
@@ -90,6 +92,10 @@ export default function CoreDashboardPage() {
     setLoading(false)
   }
 
+  const handlePreloaderComplete = useCallback(() => {
+    setShowPreloader(false)
+  }, [])
+
   // Sort members by role hierarchy
   const sortedMembers = useMemo(() => {
     return [...members].sort((a, b) => {
@@ -114,8 +120,14 @@ export default function CoreDashboardPage() {
     return sortedMembers.slice(startIndex, startIndex + ITEMS_PER_PAGE)
   }, [sortedMembers, currentPage])
 
-  if (loading) return <div className="text-center py-8">Loading dashboard...</div>
-
+  if (showPreloader) {
+    return (
+      <div className="relative w-full h-screen">
+        <Preloader onComplete={handlePreloaderComplete} />
+      </div>
+    )
+  }
+  
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">

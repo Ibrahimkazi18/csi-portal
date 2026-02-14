@@ -23,10 +23,13 @@ import { toast } from "sonner"
 import { useParams } from "next/navigation"
 import Link from "next/link"
 import { getEventResults } from "./actions"
+import Preloader from "@/components/ui/preloader"
 
 export default function EventResultsPage() {
   const params = useParams()
   const eventId = params.eventId as string
+
+  const [showPreloader, setShowPreloader] = useState(true)
   const [loading, setLoading] = useState(true)
   const [eventData, setEventData] = useState<any>(null)
 
@@ -50,6 +53,18 @@ export default function EventResultsPage() {
   useEffect(() => {
     loadEventData()
   }, [loadEventData])
+
+  const handlePreloaderComplete = useCallback(() => {
+    setShowPreloader(false)
+  }, [])
+
+  if (showPreloader) {
+    return (
+      <div className="relative w-full h-screen">
+        <Preloader onComplete={handlePreloaderComplete} />
+      </div>
+    )
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -105,10 +120,6 @@ export default function EventResultsPage() {
       default:
         return "text-muted-foreground"
     }
-  }
-
-  if (loading) {
-    return <div className="text-center py-8 text-muted-foreground">Loading event results...</div>
   }
 
   if (!eventData) {

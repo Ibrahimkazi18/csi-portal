@@ -1,24 +1,12 @@
 "use client"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
   ArrowLeft,
   Trophy,
-  Users,
-  User,
   Play,
-  RotateCcw,
-  Crown,
-  Medal,
-  Award,
-  X,
-  CheckCircle,
   AlertTriangle,
-  Target,
-  ChevronRight,
-  Copy,
 } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
@@ -33,22 +21,13 @@ import {
   completeEvent,
   resetEventProgress,
 } from "./actions"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+import Preloader from "@/components/ui/preloader"
 
 export default function LiveEventPage() {
   const params = useParams()
   const eventId = params.eventId as string
 
+  const [showPreloader, setShowPreloader] = useState(true)
   const [loading, setLoading] = useState(true)
   const [eventData, setEventData] = useState<any>(null)
   const [isCompleting, setIsCompleting] = useState(false)
@@ -74,6 +53,18 @@ export default function LiveEventPage() {
   useEffect(() => {
     loadEventData()
   }, [loadEventData])
+
+  const handlePreloaderComplete = useCallback(() => {
+    setShowPreloader(false)
+  }, [])
+
+  if (showPreloader) {
+    return (
+      <div className="relative w-full h-screen">
+        <Preloader onComplete={handlePreloaderComplete} />
+      </div>
+    )
+  }
 
   const handleMoveParticipant = async (participant: any, targetRoundId: string | null) => {
     try {
@@ -197,10 +188,6 @@ export default function LiveEventPage() {
     } finally {
       setIsResetting(false)
     }
-  }
-
-  if (loading) {
-    return <div className="text-center py-8 text-muted-foreground">Loading event data...</div>
   }
 
   if (!eventData) {

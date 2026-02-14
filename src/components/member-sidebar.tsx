@@ -1,6 +1,6 @@
 "use client"
 
-import { User, Calendar, BookOpen, LogOut, Megaphone, Trophy, X, GraduationCap, Home } from 'lucide-react'
+import { User, Calendar, BookOpen, LogOut, Megaphone, Trophy, X, GraduationCap, Home, Bell } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -45,6 +45,12 @@ const sidebarItems = [
     title: "Announcements",
     icon: Megaphone,
     path: "/member/announcements",
+    hasNotification: true,
+  },
+  {
+    title: "Notifications",
+    icon: Bell,
+    path: "/member/notifications",
     hasNotification: true,
   },
 ]

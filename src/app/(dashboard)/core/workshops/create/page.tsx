@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useCallback, useState } from "react"
 import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm, useFieldArray } from "react-hook-form"
@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Trash2, Upload, Users, Calendar as CalendarIcon, ArrowLeft } from "lucide-react"
 import * as workshopActions from "./actions"
 import Link from "next/link"
+import Preloader from "@/components/ui/preloader"
 
 const workshopSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters").max(200, "Title too long"),
@@ -52,6 +53,8 @@ type WorkshopFormData = z.infer<typeof workshopSchema>
 
 export default function CreateWorkshopPage() {
   const router = useRouter()
+
+  const [showPreloader, setShowPreloader] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const form = useForm<WorkshopFormData>({
@@ -111,6 +114,18 @@ export default function CreateWorkshopPage() {
     const hours = String(date.getHours()).padStart(2, '0')
     const minutes = String(date.getMinutes()).padStart(2, '0')
     return `${year}-${month}-${day}T${hours}:${minutes}`
+  }
+
+  const handlePreloaderComplete = useCallback(() => {
+    setShowPreloader(false)
+  }, [])
+
+  if (showPreloader) {
+    return (
+      <div className="relative w-full h-screen">
+        <Preloader onComplete={handlePreloaderComplete} />
+      </div>
+    )
   }
 
   return (

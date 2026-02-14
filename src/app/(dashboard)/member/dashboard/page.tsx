@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -11,6 +11,7 @@ import Link from "next/link"
 import * as dashboardActions from "./actions"
 import { BentoGrid, BentoCard, BentoCardHeader, BentoCardTitle, BentoCardContent } from "@/components/ui/bento-grid"
 import { CtaCard, CtaCardHeader, CtaCardTitle, CtaCardDescription, CtaCardContent } from "@/components/ui/cta-card"
+import Preloader from "@/components/ui/preloader"
 
 interface MemberDashboardStats {
   eventsParticipated: number
@@ -25,6 +26,7 @@ interface MemberDashboardStats {
 }
 
 export default function MemberDashboardPage() {
+  const [showPreloader, setShowPreloader] = useState(true)
   const [stats, setStats] = useState<MemberDashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -44,6 +46,18 @@ export default function MemberDashboardPage() {
       console.error("Failed to load dashboard:", error)
     }
     setLoading(false)
+  }
+
+  const handlePreloaderComplete = useCallback(() => {
+    setShowPreloader(false)
+  }, [])
+
+  if (showPreloader) {
+    return (
+      <div className="relative w-full h-screen">
+        <Preloader onComplete={handlePreloaderComplete} />
+      </div>
+    )
   }
 
   if (loading) return <div className="text-center py-8">Loading dashboard...</div>

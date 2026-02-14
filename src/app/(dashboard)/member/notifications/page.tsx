@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -10,19 +10,17 @@ import {
 import Link from "next/link"
 import { getTeamInvitations, getTeamApplication, respondToInvitation, respondToApplication } from "../events/actions"
 import { toast } from "sonner"
+import Preloader from "@/components/ui/preloader"
 
 export default function NotificationsPage() {
+  const [showPreloader, setShowPreloader] = useState(true)
   const [invitations, setInvitations] = useState<any[]>([])
   const [applications, setApplications] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [processingInvitation, setProcessingInvitation] = useState<string | null>(null)
   const [processingApplication, setProcessingApplication] = useState<string | null>(null)
 
-  useEffect(() => {
-    loadNotifications()
-  }, [])
-
-  const loadNotifications = async () => {
+    const loadNotifications = async () => {
     setLoading(true)
     try {
       const [invitationResponse, applicationResponse] = await Promise.all([
@@ -45,6 +43,22 @@ export default function NotificationsPage() {
     }
   }
 
+  useEffect(() => {
+    loadNotifications()
+  }, [])
+
+  const handlePreloaderComplete = useCallback(() => {
+    setShowPreloader(false)
+  }, [])
+
+  if (showPreloader) {
+    return (
+      <div className="relative w-full h-screen">
+        <Preloader onComplete={handlePreloaderComplete} />
+      </div>
+    )
+  }
+
   const handleInvitationResponse = async (invitationId: string, accept: boolean) => {
     setProcessingInvitation(invitationId)
     try {
@@ -61,11 +75,7 @@ export default function NotificationsPage() {
       setProcessingInvitation(null)
     }
   }
-
-  if (loading) {
-    return <div className="text-center py-8">Loading notifications...</div>
-  }
-
+  
   const totalPending = invitations.length + applications.filter(app => app.status === 'pending').length
 
   return (
