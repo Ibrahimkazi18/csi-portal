@@ -16,7 +16,7 @@ const opacity = {
   },
   enter: {
     opacity: 0.75,
-    transition: { duration: 1, delay: 0.2 },
+    transition: { duration: 0.75, delay: 0.15 },
   },
 }
 
@@ -26,7 +26,7 @@ const slideUp = {
   },
   exit: {
     top: "-100vh",
-    transition: { duration: 0.8, ease: [0.76, 0, 0.24, 1] as const, delay: 0.2 },
+    transition: { duration: 0.5, ease: [0.76, 0, 0.24, 1] as const, delay: 0.1 },
   },
 }
 
@@ -53,8 +53,8 @@ export default function Preloader({ onComplete, fullscreen = false }: PreloaderP
         // Call onComplete after exit animation
         setTimeout(() => {
           onComplete?.()
-        }, 1000)
-      }, 1000)
+        }, 600)
+      }, 800)
       return
     }
 
@@ -72,11 +72,11 @@ export default function Preloader({ onComplete, fullscreen = false }: PreloaderP
   const curve = {
     initial: {
       d: initialPath,
-      transition: { duration: 0.7, ease: [0.76, 0, 0.24, 1] as const },
+      transition: { duration: 0.5, ease: [0.76, 0, 0.24, 1] as const },
     },
     exit: {
       d: targetPath,
-      transition: { duration: 0.7, ease: [0.76, 0, 0.24, 1] as const, delay: 0.3 },
+      transition: { duration: 0.5, ease: [0.76, 0, 0.24, 1] as const, delay: 0.2 },
     },
   }
 
