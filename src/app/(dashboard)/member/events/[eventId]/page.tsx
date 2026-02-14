@@ -140,6 +140,14 @@ function EventDetailsPageContent() {
     )
   }
 
+  if (loadingData) {
+    return (
+      <div className="relative w-full h-screen">
+        <Preloader onComplete={handlePreloaderComplete} />
+      </div>
+    )
+  }
+
   const handleRegisterForEvent = () => {
     setIsRegistrationModalOpen(true)
   }

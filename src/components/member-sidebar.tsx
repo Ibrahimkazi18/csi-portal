@@ -1,6 +1,6 @@
 "use client"
 
-import { User, Calendar, BookOpen, LogOut, Megaphone, Trophy, X, GraduationCap, Home, Bell } from 'lucide-react'
+import { User, Calendar, BookOpen, LogOut, Megaphone, Trophy, X, GraduationCap, Home, Bell, Users } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -52,6 +52,11 @@ const sidebarItems = [
     icon: Bell,
     path: "/member/notifications",
     hasNotification: true,
+  },
+  {
+    title: "My Teams",
+    icon: Users,
+    path: "/member/teams",
   },
 ]
 
@@ -107,7 +112,7 @@ export default function MemberSidebar({ onClose }: MemberSidebarProps) {
       {/* Header */}
       <div className="flex h-16 items-center justify-between px-6 border-b border-border">
         <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-sm">
+          <div className="h-8 w-8 rounded-lg bg-linear-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-sm">
             <span className="text-sm font-semibold text-white">CSI</span>
           </div>
           <div className="flex flex-col">
@@ -160,7 +165,7 @@ export default function MemberSidebar({ onClose }: MemberSidebarProps) {
       {/* Footer */}
       <div className="border-t border-border p-4">
         <div className="flex items-center gap-3 mb-4">
-          <div className="h-9 w-9 rounded-full bg-gradient-to-br from-slate-400 to-slate-500 flex items-center justify-center text-white text-sm font-medium">
+          <div className="h-9 w-9 rounded-full bg-linear-to-br from-slate-400 to-slate-500 flex items-center justify-center text-white text-sm font-medium">
             {loadingData ? '...' : user?.full_name?.charAt(0) || 'U'}
           </div>
           <div className="flex-1 min-w-0">

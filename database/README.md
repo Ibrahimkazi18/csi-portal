@@ -15,6 +15,14 @@ Comprehensive manual events and workshops support including:
 - Workshop hosts
 - Comprehensive audit logging
 
+### 002_add_notifications_system.sql
+Team leader notification system including:
+- Notifications table for team invitation responses
+- Row Level Security policies for user privacy
+- Indexes for performance optimization
+- Support for different notification types (team, event, workshop, etc.)
+- Read/unread status tracking
+
 ## Core Tables
 
 ### events
@@ -78,6 +86,18 @@ Speakers and hosts for workshop-type events.
 - `organization`: Optional organization
 - `profile_id`: Optional link to existing user profile
 
+### notifications
+System notifications for users, primarily for team invitation responses.
+
+**Key Columns:**
+- `recipient_id`: Foreign key to profiles table (who receives the notification)
+- `title`: Notification title/subject
+- `message`: Notification content/body
+- `type`: Notification category ('team', 'event', 'workshop', 'announcement', 'general')
+- `read`: Boolean indicating if notification has been read
+- `metadata`: JSON field for additional notification data
+- `created_at`, `updated_at`: Timestamp tracking
+
 ### event_audit_logs
 Comprehensive audit trail for all manual event operations.
 
@@ -87,6 +107,31 @@ Comprehensive audit trail for all manual event operations.
 - `performed_by`: User who performed the action
 - `metadata`: JSON data with action details
 - `created_at`: Timestamp
+
+## Team Leader Notification Workflow
+
+### 1. Invitation Response Tracking
+- When members respond to team invitations (accept/decline), automatic notifications are created
+- Team leaders receive notifications in their notification center
+- Notifications include member name, team name, and response type
+
+### 2. Team Management Dashboard
+- Team leaders can access `/member/teams` to manage their teams
+- View all teams where user is the leader
+- Track invitation status for each team member
+- Send new invitations to available members
+
+### 3. Re-invitation System
+- Team leaders can re-invite members who declined invitations
+- System prevents duplicate pending invitations
+- Smart filtering shows only available members for invitation
+- Automatic cleanup of old invitations when sending new ones
+
+### 4. Notification Integration
+- Team leader notifications appear in unified notification center
+- Separate tab for team leader notifications vs member invitations
+- Real-time badge indicators for unread notifications
+- Mark as read functionality for notification management
 
 ## Manual Event Workflow
 

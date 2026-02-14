@@ -4,8 +4,9 @@ import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle, XCircle, Clock, Mail, UserPlus } from "lucide-react"
+import { CheckCircle, XCircle, Clock, Mail, UserPlus, Plus } from "lucide-react"
 import { toast } from "sonner"
+import { SendInvitationModal } from "./send-invitation-modal"
 
 interface TeamInvitationStatus {
   id: string
@@ -20,9 +21,11 @@ interface TeamInvitationStatus {
 
 interface TeamInvitationsStatusProps {
   teamId: string
+  eventId?: string
+  teamName?: string
 }
 
-export function TeamInvitationsStatus({ teamId }: TeamInvitationsStatusProps) {
+export function TeamInvitationsStatus({ teamId, eventId, teamName }: TeamInvitationsStatusProps) {
   const [invitations, setInvitations] = useState<TeamInvitationStatus[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -110,10 +113,26 @@ export function TeamInvitationsStatus({ teamId }: TeamInvitationsStatusProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Mail className="h-5 w-5" />
-          Team Invitations ({invitations.length})
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Mail className="h-5 w-5" />
+            Team Invitations ({invitations.length})
+          </CardTitle>
+          {eventId && teamName && (
+            <SendInvitationModal
+              teamId={teamId}
+              eventId={eventId}
+              teamName={teamName}
+              onSuccess={loadInvitations}
+              triggerButton={
+                <Button size="sm" variant="outline">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Invite Member
+                </Button>
+              }
+            />
+          )}
+        </div>
       </CardHeader>
       <CardContent className="space-y-3">
         {invitations.map((invitation) => (

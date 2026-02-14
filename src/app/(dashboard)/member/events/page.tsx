@@ -55,9 +55,6 @@ export default function MemberEventsPage() {
     )
   }
 
-  // if(loadingData) {
-  //   return <EventsPageSkeleton />
-  // }
 
   return (
     <div className="space-y-6">
