@@ -11,9 +11,9 @@ import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
 import { getSearchedProfile } from "../actions"
 import { AchievementsSection } from "../components/achievements-section"
-import ProfileLoadingSkeleton from "../components/profile-skeleton"
 import SearcgProfileModal from "../components/search-profile-modal"
 import { useParams } from "next/navigation"
+import Preloader from "@/components/ui/preloader"
 
 interface ProfileData {
   id: string
@@ -40,6 +40,7 @@ export default function ProfilePage() {
   const params = useParams()
   const profileId = params.profileId as string
 
+  const [showPreloader, setShowPreloader] = useState(true)
   const [loading, setLoading] = useState(true)
   const [profileData, setProfileData] = useState<ProfileData | null>(null)
   const [searchProfileOpen, setSearchProfileOpen] = useState(false)
@@ -69,8 +70,16 @@ export default function ProfilePage() {
     loadProfileData()
   }, [loadProfileData])
 
-  if (loading) {
-    return <ProfileLoadingSkeleton />
+  const handlePreloaderComplete = useCallback(() => {
+    setShowPreloader(false)
+  }, [])
+
+  if (showPreloader) {
+    return (
+      <div className="relative w-full h-screen">
+        <Preloader onComplete={handlePreloaderComplete} />
+      </div>
+    )
   }
 
   if (!profileData) {
