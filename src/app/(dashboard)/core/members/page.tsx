@@ -248,7 +248,7 @@ export default function MembersPage() {
                             <div className="flex items-center gap-2">
                               <User className="h-4 w-4 text-muted-foreground" />
                               <span className="font-medium">{member.full_name}</span>
-                              {member.is_core_team && (
+                              {member.role === "core" && (
                                 <Crown className="h-4 w-4 text-yellow-500" />
                               )}
                             </div>
