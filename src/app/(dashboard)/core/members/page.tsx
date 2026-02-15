@@ -230,7 +230,6 @@ export default function MembersPage() {
                       <TableHead className="font-semibold py-4 px-6">Name</TableHead>
                       <TableHead className="font-semibold py-4 px-6">Email</TableHead>
                       <TableHead className="font-semibold py-4 px-6">Member Role</TableHead>
-                      <TableHead className="font-semibold py-4 px-6">Account Role</TableHead>
                       <TableHead className="font-semibold py-4 px-6">Status</TableHead>
                       <TableHead className="font-semibold py-4 px-6">Join Date</TableHead>
                       <TableHead className="text-right font-semibold py-4 px-6">Actions</TableHead>
@@ -270,11 +269,6 @@ export default function MembersPage() {
                               className="capitalize"
                             >
                               {member.member_role || 'Member'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="py-4 px-6">
-                            <Badge variant="outline" className="capitalize">
-                              {member.role}
                             </Badge>
                           </TableCell>
                           <TableCell className="py-4 px-6">
