@@ -153,7 +153,7 @@ export default function MembersPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="max-h-screen h-screen space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-neon">Members Management</h1>
@@ -222,7 +222,7 @@ export default function MembersPage() {
             <div className="text-center py-8 text-muted-foreground">Loading members...</div>
           ) : (
             <>
-              <div className="border border-border rounded-lg overflow-hidden">
+              <div className="border border-border rounded-lg">
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/50 hover:bg-muted/50">
