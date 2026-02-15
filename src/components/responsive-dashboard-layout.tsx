@@ -18,7 +18,7 @@ export default function ResponsiveDashboardLayout({ children, role }: Responsive
   const SidebarComponent = role === "core" ? CoreTeamSidebar : MemberSidebar
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen bg-background scrollbar-hide">
       {/* Mobile sidebar overlay */}
       <div
         className={cn(

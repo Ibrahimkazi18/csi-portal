@@ -94,12 +94,8 @@ export default function CoreTeamSidebar({ onClose }: CoreTeamSidebarProps) {
 
   const handleLogout = async () => {
     setLoading(true)
-    try {
-      await logOut()
-    } catch (error) {
-      toast.error("Failed to logout")
-      setLoading(false)
-    }
+    await logOut()
+    // Note: logOut() will redirect, so code after this won't execute
   }
 
   const handleLinkClick = () => {

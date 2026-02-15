@@ -1,6 +1,6 @@
 "use client"
 
-import { User, Calendar, BookOpen, LogOut, Megaphone, Trophy, X, GraduationCap, Home, Bell, Users } from 'lucide-react'
+import { User, Calendar, BookOpen, LogOut, Megaphone, Trophy, X, GraduationCap, Home, Bell, Users, Shield } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -40,6 +40,11 @@ const sidebarItems = [
     title: "CSI Guide",
     icon: BookOpen,
     path: "/member/guide",
+  },
+  {
+    title: "Core Team",
+    icon: Shield,
+    path: "/member/roles",
   },
   {
     title: "Announcements",
@@ -95,12 +100,8 @@ export default function MemberSidebar({ onClose }: MemberSidebarProps) {
 
   const handleLogout = async () => {
     setLoading(true)
-    try {
-      await logOut()
-    } catch (error) {
-      toast.error("Failed to logout")
-      setLoading(false)
-    }
+    await logOut()
+    // Note: logOut() will redirect, so code after this won't execute
   }
 
   const handleLinkClick = () => {

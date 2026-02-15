@@ -2,13 +2,11 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Shield, Crown, UserPlus, Edit2, Users } from 'lucide-react';
-import { getMemberRoles, getMembers, getProfileUser } from './actions';
+import { Shield, Crown, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import Preloader from '@/components/ui/preloader';
 import { CtaCard, CtaCardContent, CtaCardHeader, CtaCardTitle, CtaCardDescription } from '@/components/ui/cta-card';
-import { AssignRoleModal } from './components/assign-role-modal';
+import { getMemberRoles, getMembers } from '../../core/roles/actions';
 
 interface Member {
   id: string;
@@ -27,12 +25,11 @@ interface RoleDefinition {
   max_count: number;
 }
 
-export default function RolesPage() {
+export default function MemberRolesPage() {
   const [showPreloader, setShowPreloader] = useState(true)
   const [members, setMembers] = useState<Member[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [availableRoles, setAvailableRoles] = useState<RoleDefinition[]>([]);
-  const [profileUser, setProfileUser] = useState<any>(null);
   const [isDataReady, setIsDataReady] = useState(false);
 
   const roleHierarchy = [
@@ -49,22 +46,13 @@ export default function RolesPage() {
     setLoadingData(true);
 
     try {
-      const [activeMembers, memberRoles, response] = await Promise.all([
+      const [activeMembers, memberRoles] = await Promise.all([
         getMembers(), 
-        getMemberRoles(), 
-        getProfileUser()
+        getMemberRoles()
       ]);
 
-      if(response.error) {
-        throw new Error(response.error);
-      }
-
-      if(response.success){
-        setProfileUser(response.user);
-      }
-
       // Filter only core team members (exclude 'none' role)
-      const coreMembers = activeMembers.filter(m => m.member_role && m.member_role.toLowerCase() !== 'none');
+      const coreMembers = activeMembers.filter((m: Member) => m.member_role && m.member_role.toLowerCase() !== 'none');
       setMembers(coreMembers);
       setAvailableRoles(memberRoles);
       setIsDataReady(true);
@@ -96,8 +84,6 @@ export default function RolesPage() {
     return roleData?.color_class || 'bg-gray-500/20 text-gray-500';
   };
 
-  const isPresident = profileUser?.member_role?.toLowerCase() === 'president';
-
   if (showPreloader) {
     return (
       <div className="relative w-full h-screen">
@@ -127,7 +113,7 @@ export default function RolesPage() {
             Core Team Hierarchy
           </h1>
           <p className="text-muted-foreground">
-            {isPresident ? 'Manage core team roles and assignments' : 'View core team structure'}
+            View the CSI core team structure and leadership
           </p>
         </div>
         <div className="flex items-center gap-2 text-muted-foreground">
@@ -141,7 +127,6 @@ export default function RolesPage() {
         {roleHierarchy.map((roleConfig) => {
           const roleMembers = getMembersForRole(roleConfig.role);
           const hasMinimum = roleMembers.length >= roleConfig.minCount;
-          const isFull = roleConfig.maxCount ? roleMembers.length >= roleConfig.maxCount : false;
           const RoleIcon = roleConfig.icon;
           const roleColor = getRoleColor(roleConfig.role);
 
@@ -165,24 +150,9 @@ export default function RolesPage() {
                       </CtaCardDescription>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className={roleColor}>
-                      {roleConfig.role}
-                    </Badge>
-                    {isPresident && !isFull && (
-                      <AssignRoleModal
-                        roleConfig={roleConfig}
-                        availableRoles={availableRoles}
-                        onSuccess={fetchAllMembersAndRoles}
-                        triggerButton={
-                          <Button size="sm" variant="outline">
-                            <UserPlus className="h-4 w-4 mr-2" />
-                            Assign
-                          </Button>
-                        }
-                      />
-                    )}
-                  </div>
+                  <Badge variant="outline" className={roleColor}>
+                    {roleConfig.role}
+                  </Badge>
                 </div>
               </CtaCardHeader>
               <CtaCardContent>
@@ -198,7 +168,7 @@ export default function RolesPage() {
                           No members assigned yet
                         </p>
                         <p className="text-sm text-muted-foreground">
-                          {isPresident ? 'Click "Assign" to add members to this role' : 'Awaiting assignment by president'}
+                          Awaiting assignment by president
                         </p>
                       </div>
                     </div>
@@ -214,7 +184,7 @@ export default function RolesPage() {
                     {roleMembers.map((member) => (
                       <div
                         key={member.id}
-                        className="relative p-4 rounded-lg border border-border bg-card hover:bg-muted/20 transition-all group"
+                        className="relative p-4 rounded-lg border border-border bg-card hover:bg-muted/20 transition-all"
                       >
                         <div className="flex items-start gap-4">
                           {/* Avatar */}
@@ -232,21 +202,6 @@ export default function RolesPage() {
                               </Badge>
                             </div>
                           </div>
-
-                          {/* Edit Button (President Only) */}
-                          {isPresident && (
-                            <AssignRoleModal
-                              currentMember={member}
-                              roleConfig={roleConfig}
-                              availableRoles={availableRoles}
-                              onSuccess={fetchAllMembersAndRoles}
-                              triggerButton={
-                                <button className="opacity-0 group-hover:opacity-100 transition-opacity p-2 hover:bg-muted rounded-lg">
-                                  <Edit2 className="h-4 w-4 text-muted-foreground" />
-                                </button>
-                              }
-                            />
-                          )}
                         </div>
                       </div>
                     ))}
